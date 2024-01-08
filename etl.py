@@ -1,16 +1,13 @@
 import os
 import pandas as pd
+import numpy as np
 import datetime
 import modal
 import duckdb
 import json
+import requests
 
 stub = modal.Stub("box-office-tracking")
-
-if modal.is_local():
-    draft = pd.read_csv("data/box_office_draft.csv").to_json(orient="records")
-    global_vars = {"draft": json.loads(draft)}
-    stub.data_dict = modal.Dict.new(global_vars)
 
 modal_image = modal.Image.debian_slim(python_version="3.10").run_commands(
     "pip install requests", "pip install duckdb==0.9.2", "pip install pandas==2.1.4"
@@ -23,11 +20,11 @@ s3_file = f"s3://box-office-tracking/{table_name}.parquet"
 movie_id_regex = r".*movie\/(\d+)-.*"
 
 
-def get_movie_data(id):
+def get_movie_data(id, api_key):
     if id is np.nan:
         return None
 
-    url = f"https://api.themoviedb.org/3/movie/{id}?api_key={MOVIE_DB_API_KEY}"
+    url = f"https://api.themoviedb.org/3/movie/{id}?api_key={api_key}"
 
     response = requests.get(url)
 
@@ -48,13 +45,11 @@ def get_movie_data(id):
     }
 
 
-def create_data():
-    draft_data = stub.data_dict["draft"]
-
-    df = pd.read_json(draft_data, orient="records")
+def create_data(api_key):
+    df = pd.read_csv("data/box_office_draft.csv")
 
     df["movie_id"] = df["url"].str.extract(movie_id_regex)
-    df["stats"] = df["movie_id"].apply(get_movie_data)
+    df["stats"] = df["movie_id"].apply(lambda x: get_movie_data(x, api_key))
     df = df.join(pd.json_normalize(df["stats"])).drop("stats", axis="columns")
 
     df["title"] = df["title"].fillna(df["movie"])
@@ -68,14 +63,14 @@ def create_data():
 
 @stub.function(
     image=modal_image,
-    schedule=modal.Cron("0 3 * * *"),
+    schedule=modal.Cron("0 4 * * *"),
     secret=modal.Secret.from_name("box-office-tracking-secrets"),
     retries=5,
+    mounts=[modal.Mount.from_local_dir("data/", remote_path="/root/data")],
 )
 def record_movies():
     MOVIE_DB_API_KEY = os.environ["MOVIE_DB_API_KEY"]
-
-    create_data()
+    create_data(MOVIE_DB_API_KEY)
 
     duckdb_con = duckdb.connect()
     duckdb_con.execute(
