@@ -4,7 +4,6 @@ import numpy as np
 import datetime
 import modal
 import duckdb
-import json
 import requests
 
 stub = modal.Stub("box-office-tracking")
