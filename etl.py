@@ -128,7 +128,6 @@ def record_movies():
         ),
     )
 
-    spread.clear_sheet()
     spread.df_to_sheet(df, index=False, sheet="Dashboard", start="A1")
     spread.df_to_sheet(
         pd.DataFrame(
