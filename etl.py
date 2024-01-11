@@ -5,11 +5,15 @@ import datetime
 import modal
 import duckdb
 import requests
+import gspread_pandas as gp
 
 stub = modal.Stub("box-office-tracking")
 
 modal_image = modal.Image.debian_slim(python_version="3.10").run_commands(
-    "pip install requests", "pip install duckdb==0.9.2", "pip install pandas==2.1.4"
+    "pip install requests",
+    "pip install duckdb==0.9.2",
+    "pip install pandas==2.1.4",
+    "pip install gspread_pandas==3.2.2",
 )
 
 table_name = f"movie_records_{datetime.date.today().strftime('%Y%m%d')}"
@@ -65,9 +69,14 @@ def create_data(api_key):
     schedule=modal.Cron("0 4 * * *"),
     secret=modal.Secret.from_name("box-office-tracking-secrets"),
     retries=5,
-    mounts=[modal.Mount.from_local_dir("data/", remote_path="/root/data")],
+    mounts=[
+        modal.Mount.from_local_dir("data/", remote_path="/root/data"),
+        modal.Mount.from_local_dir("config/", remote_path="/root/config"),
+    ],
 )
 def record_movies():
+    # add logging
+
     MOVIE_DB_API_KEY = os.environ["MOVIE_DB_API_KEY"]
     create_data(MOVIE_DB_API_KEY)
 
@@ -82,12 +91,54 @@ def record_movies():
     )
 
     duckdb_con.execute(
-        f"create or replace table {table_name} as select * "
-        f"from read_json_auto('{file_name}');"
+        f"copy (select * from read_json_auto('{file_name}')) to '{s3_file}';"
     )
 
-    duckdb_con.execute(f"copy {table_name} to '{s3_file}'; drop table {table_name};")
+    df = duckdb.query(
+        f"""
+        with full_table as (
+            select
+                *
+                , case when round > 13 then 5 else 1 end as multiplier
+                , multiplier * revenue as scored_revenue
+                , revenue / budget as roi
+                , revenue > 0 as released
+            from (select * from read_json_auto('{file_name}'))
+        )
+
+        select
+            name
+            , sum(scored_revenue) as scored_revenue
+            , sum(released::int)::int as num_released
+            , coalesce(sum(case when released then budget end), 0) as total_budget
+            , round(coalesce((sum(revenue) / total_budget) - 1, 0) * 100, 2) as avg_roi
+        from full_table
+        group by 1
+        order by 2 desc, 3;
+        """
+    ).to_df()
+    df.columns = ["Name", "Scored Revenue", "# Released", "Total Budget", "Avg ROI"]
+
     duckdb_con.close()
+
+    spread = gp.Spread(
+        "Fantasy Box Office",
+        config=gp.conf.get_config(
+            conf_dir="config/", file_name="box-office-tracking-draft-e034f0e51fb4.json"
+        ),
+    )
+
+    spread.clear_sheet()
+    spread.df_to_sheet(df, index=False, sheet="Dashboard", start="A1")
+    spread.df_to_sheet(
+        pd.DataFrame(
+            columns=["Last Updated UTC"],
+            data=[datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")],
+        ),
+        index=False,
+        sheet="Dashboard",
+        start="G1",
+    )
 
     os.remove(file_name)
 
