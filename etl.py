@@ -31,20 +31,26 @@ def get_movie_data(id, api_key):
 
     response = requests.get(url)
 
-    # error handling?
+    if response.status_code != 200:
+        print(f"Movie id {id} not found, skipping")
+        return None
 
     data = response.json()
+
     return {
-        "revenue": data["revenue"],
-        "imdb_id": data["imdb_id"],
-        "budget": data["budget"],
-        "title": data["title"],
-        "status": data["status"],
-        "release_date": data["release_date"],
-        "runtime": data["runtime"],
-        "vote_average": data["vote_average"],
-        "vote_count": data["vote_count"],
-        "popularity": data["popularity"],
+        key: response.json().get(key, None)
+        for key in [
+            "revenue",
+            "imdb_id",
+            "budget",
+            "title",
+            "status",
+            "release_date",
+            "runtime",
+            "vote_average",
+            "vote_count",
+            "popularity",
+        ]
     }
 
 
@@ -144,3 +150,5 @@ def record_movies():
 
 if __name__ == "__main__":
     modal.runner.deploy_stub(stub)
+
+# %%
