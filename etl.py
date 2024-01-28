@@ -1,11 +1,14 @@
 import os
+import sys
 import pandas as pd
 import numpy as np
 import datetime
 import modal
 import duckdb
 import requests
-import gspread_pandas as gp
+import gspread
+import gspread_formatting as gsf
+import assets
 
 stub = modal.Stub("box-office-tracking")
 
@@ -13,11 +16,12 @@ modal_image = modal.Image.debian_slim(python_version="3.10").run_commands(
     "pip install requests",
     "pip install duckdb==0.9.2",
     "pip install pandas==2.1.4",
-    "pip install gspread_pandas==3.2.2",
+    "pip install gspread==5.12.4",
+    "pip install gspread-formatting==1.1.2",
 )
 
 table_name = f"movie_records_{datetime.date.today().strftime('%Y%m%d')}"
-file_name = f"{table_name}.json"
+daily_file_name = "daily_score.json"
 s3_file = f"s3://box-office-tracking/{table_name}.parquet"
 
 movie_id_regex = r".*movie\/(\d+)-.*"
@@ -55,7 +59,7 @@ def get_movie_data(id, api_key):
 
 
 def create_data(api_key):
-    df = pd.read_csv("data/box_office_draft.csv")
+    df = pd.read_csv("assets/box_office_draft.csv")
 
     df["movie_id"] = df["url"].str.extract(movie_id_regex)
     df["stats"] = df["movie_id"].apply(lambda x: get_movie_data(x, api_key))
@@ -65,9 +69,36 @@ def create_data(api_key):
     df = df.drop("movie", axis="columns")
     df["record_date"] = str(datetime.date.today())
 
-    df.to_json(file_name, orient="records")
+    df.to_json(daily_file_name, orient="records")
 
     return
+
+
+def df_to_sheet(df, worksheet, location, format=None):
+    worksheet.update(
+        range_name=location, values=[df.columns.values.tolist()] + df.values.tolist()
+    )
+    print(f"Updated {location} with {df.shape[0]} rows and {df.shape[1]} columns")
+
+    if format:
+        for format_location, format_rules in format.items():
+            worksheet.format(ranges=format_location, format=format_rules)
+    return
+
+
+def query_to_df(query_location, source_tables=None, columns=None):
+    with open(query_location, "r") as file:
+        query = file.read().replace("\n", " ")
+
+    if source_tables:
+        for source_table_name, source_table_location in source_tables.items():
+            query = query.replace(f"<<{source_table_name}>>", source_table_location)
+
+    df = duckdb.query(query).to_df()
+    if columns:
+        df.columns = columns
+
+    return df
 
 
 @stub.function(
@@ -76,7 +107,7 @@ def create_data(api_key):
     secret=modal.Secret.from_name("box-office-tracking-secrets"),
     retries=5,
     mounts=[
-        modal.Mount.from_local_dir("data/", remote_path="/root/data"),
+        modal.Mount.from_local_dir("assets/", remote_path="/root/assets"),
         modal.Mount.from_local_dir("config/", remote_path="/root/config"),
     ],
 )
@@ -97,58 +128,81 @@ def record_movies():
     )
 
     duckdb_con.execute(
-        f"copy (select * from read_json_auto('{file_name}')) to '{s3_file}';"
+        f"copy (select * from read_json_auto('{daily_file_name}')) to '{s3_file}';"
     )
 
-    df = duckdb.query(
-        f"""
-        with full_table as (
-            select
-                *
-                , case when round > 13 then 5 else 1 end as multiplier
-                , multiplier * revenue as scored_revenue
-                , revenue / budget as roi
-                , revenue > 0 as released
-            from (select * from read_json_auto('{file_name}'))
+    dashboard_elements = (
+        (
+            query_to_df(
+                "assets/scoreboard.sql",
+                source_tables={
+                    "daily_score": daily_file_name,
+                },
+                columns=[
+                    "Name",
+                    "Scored Revenue",
+                    "# Released",
+                    "Total Budget",
+                    "Avg ROI",
+                ],
+            ),
+            "B4",
+            assets.get_scoreboard_format(),
+        ),
+    )
+
+    gc = gspread.service_account(
+        filename="config/box-office-tracking-draft-e034f0e51fb4.json"
+    )
+
+    sh = gc.open("Fantasy Box Office")
+
+    worksheet_title = "Dashboard"
+    worksheet = sh.worksheet(worksheet_title)
+
+    sh.del_worksheet(worksheet)
+    worksheet = sh.add_worksheet(title=worksheet_title, rows=10, cols=7, index=1)
+
+    for element in dashboard_elements:
+        df_to_sheet(
+            df=element[0],
+            worksheet=worksheet,
+            location=element[1],
+            format=element[2] if len(element) > 2 else None,
         )
 
-        select
-            name
-            , sum(scored_revenue) as scored_revenue
-            , sum(released::int)::int as num_released
-            , coalesce(sum(case when released then budget end), 0) as total_budget
-            , round(coalesce((sum(revenue) / total_budget) - 1, 0) * 100, 2) as avg_roi
-        from full_table
-        group by 1
-        order by 2 desc, 3;
-        """
-    ).to_df()
-    df.columns = ["Name", "Scored Revenue", "# Released", "Total Budget", "Avg ROI"]
-
     duckdb_con.close()
+    os.remove(daily_file_name)
 
-    spread = gp.Spread(
-        "Fantasy Box Office",
-        config=gp.conf.get_config(
-            conf_dir="config/", file_name="box-office-tracking-draft-e034f0e51fb4.json"
-        ),
+    worksheet.update("B2", "Fantasy Box Office Standings")
+    worksheet.format(
+        "B2",
+        {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
+    )
+    worksheet.merge_cells("B2:E2")
+    worksheet.update(
+        "F2",
+        f"Last Updated UTC\n{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+    )
+    worksheet.format(
+        "F2",
+        {
+            "horizontalAlignment": "CENTER",
+        },
     )
 
-    spread.df_to_sheet(df, index=False, sheet="Dashboard", start="A1")
-    spread.df_to_sheet(
-        pd.DataFrame(
-            columns=["Last Updated UTC"],
-            data=[datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")],
-        ),
-        index=False,
-        sheet="Dashboard",
-        start="G1",
-    )
-
-    os.remove(file_name)
+    column_sizes = {
+        "A": 21,
+        "B": 86,
+        "C": 130,
+        "D": 100,
+        "E": 110,
+        "F": 130,
+        "G": 21,
+    }
+    for column, size in column_sizes.items():
+        gsf.set_column_width(worksheet, column, size)
 
 
 if __name__ == "__main__":
     modal.runner.deploy_stub(stub)
-
-# %%
