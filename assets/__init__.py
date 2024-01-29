@@ -87,7 +87,7 @@ def get_released_movies_format():
                 "pattern": "#.0#",
             },
         },
-        "P5:P": {
+        "R5:R": {
             "horizontalAlignment": "RIGHT",
             "numberFormat": {"type": "NUMBER"},
         },
