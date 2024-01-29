@@ -13,7 +13,7 @@ select
     row_number() over (order by scored_revenue desc) as rank
     , title
     , name as drafted_by
-    , strftime(release_date::date, '%-d/%-m/%Y') as release_date
+    , strftime(release_date::date, '%-m/%-d/%Y') as release_date
     , today() - release_date::date as days_since_released
     , revenue
     , scored_revenue
