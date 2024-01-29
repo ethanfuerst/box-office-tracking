@@ -21,4 +21,5 @@ select
     , coalesce(roi, 0) as roi
     , popularity
     , runtime
-from full_table;
+from full_table
+order by rank asc;

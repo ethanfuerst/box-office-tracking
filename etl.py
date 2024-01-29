@@ -21,7 +21,9 @@ modal_image = modal.Image.debian_slim(python_version="3.10").run_commands(
     "pip install gspread-formatting==1.1.2",
 )
 
-table_name = f"movie_records_{datetime.datetime.now(timezone('US/Eastern')).strftime('%Y%m%d')}"
+table_name = (
+    f"movie_records_{datetime.datetime.now(timezone('US/Eastern')).strftime('%Y%m%d')}"
+)
 daily_file_name = "daily_score.json"
 s3_file = f"s3://box-office-tracking/{table_name}.parquet"
 
@@ -109,7 +111,7 @@ def query_to_df(query_location, source_tables=None, columns=None):
     image=modal_image,
     schedule=modal.Cron("0 4 * * *"),
     secret=modal.Secret.from_name("box-office-tracking-secrets"),
-    retries=5,
+    retries=1,
     mounts=[
         modal.Mount.from_local_dir("assets/", remote_path="/root/assets"),
         modal.Mount.from_local_dir("config/", remote_path="/root/config"),
@@ -137,6 +139,26 @@ def record_movies():
         f"Updated {s3_file} with {duckdb_con.sql(row_count).fetchnumpy()['count_star()'][0]} rows"
     )
 
+    released_movies_df = query_to_df(
+        "assets/released_movies.sql",
+        source_tables={
+            "daily_score": daily_file_name,
+        },
+        columns=[
+            "Rank",
+            "Title",
+            "Drafted By",
+            "Release Date*",
+            "Days Since Released",
+            "Revenue",
+            "Scored Revenue",
+            "Budget",
+            "ROI",
+            "Popularity",
+            "Runtime (Mins)",
+        ],
+    )
+
     dashboard_elements = (
         (
             query_to_df(
@@ -156,25 +178,7 @@ def record_movies():
             assets.get_scoreboard_format(),
         ),
         (
-            query_to_df(
-                "assets/released_movies.sql",
-                source_tables={
-                    "daily_score": daily_file_name,
-                },
-                columns=[
-                    "Rank",
-                    "Title",
-                    "Drafted By",
-                    "Release Date*",
-                    "Days Since Released",
-                    "Revenue",
-                    "Scored Revenue",
-                    "Budget",
-                    "ROI",
-                    "Popularity",
-                    "Runtime (Mins)",
-                ],
-            ),
+            released_movies_df,
             "H4",
             assets.get_released_movies_format(),
         ),
@@ -190,7 +194,11 @@ def record_movies():
     worksheet = sh.worksheet(worksheet_title)
 
     sh.del_worksheet(worksheet)
-    worksheet = sh.add_worksheet(title=worksheet_title, rows=20, cols=19, index=1)
+    # 3 rows for title, 1 row for column titles, 2 rows for padding around footer, 1 row for footer
+    sheet_height = len(released_movies_df) + 7
+    worksheet = sh.add_worksheet(
+        title=worksheet_title, rows=sheet_height, cols=19, index=1
+    )
 
     # Adding each dashboard element
     for element in dashboard_elements:
@@ -227,7 +235,10 @@ def record_movies():
         {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
     )
     worksheet.merge_cells("H2:R2")
-    worksheet.update("H19", "*Movie release date is based on the international release date")
+    worksheet.update(
+        f"H{sheet_height - 1}",
+        "*Movie release date is based on the international release date",
+    )
 
     # resizing columns
     column_sizes = {
