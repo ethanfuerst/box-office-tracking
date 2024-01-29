@@ -9,6 +9,7 @@ import requests
 import gspread
 import gspread_formatting as gsf
 import assets
+from pytz import timezone
 
 stub = modal.Stub("box-office-tracking")
 
@@ -20,7 +21,7 @@ modal_image = modal.Image.debian_slim(python_version="3.10").run_commands(
     "pip install gspread-formatting==1.1.2",
 )
 
-table_name = f"movie_records_{datetime.date.today().strftime('%Y%m%d')}"
+table_name = f"movie_records_{datetime.datetime.now(timezone('US/Eastern')).strftime('%Y%m%d')}"
 daily_file_name = "daily_score.json"
 s3_file = f"s3://box-office-tracking/{table_name}.parquet"
 
@@ -131,7 +132,7 @@ def record_movies():
     duckdb_con.execute(
         f"copy (select * from read_json_auto('{daily_file_name}')) to '{s3_file}';"
     )
-    row_count = f"select count(*) from '{s3_file}'"
+    row_count = f"select count(*) from '{s3_file}';"
     print(
         f"Updated {s3_file} with {duckdb_con.sql(row_count).fetchnumpy()['count_star()'][0]} rows"
     )
