@@ -70,6 +70,9 @@ def create_data(api_key):
     df["record_date"] = str(datetime.date.today())
 
     df.to_json(daily_file_name, orient="records")
+    print(
+        f'Created "{daily_file_name}" with {df.shape[0]} rows and {df.shape[1]} columns'
+    )
 
     return
 
@@ -112,8 +115,6 @@ def query_to_df(query_location, source_tables=None, columns=None):
     ],
 )
 def record_movies():
-    # add logging
-
     MOVIE_DB_API_KEY = os.environ["MOVIE_DB_API_KEY"]
     create_data(MOVIE_DB_API_KEY)
 
@@ -129,6 +130,10 @@ def record_movies():
 
     duckdb_con.execute(
         f"copy (select * from read_json_auto('{daily_file_name}')) to '{s3_file}';"
+    )
+    row_count = f"select count(*) from '{s3_file}'"
+    print(
+        f"Updated {s3_file} with {duckdb_con.sql(row_count).fetchnumpy()['count_star()'][0]} rows"
     )
 
     dashboard_elements = (
@@ -163,6 +168,7 @@ def record_movies():
     sh.del_worksheet(worksheet)
     worksheet = sh.add_worksheet(title=worksheet_title, rows=10, cols=7, index=1)
 
+    # Adding each dashboard element
     for element in dashboard_elements:
         df_to_sheet(
             df=element[0],
@@ -174,6 +180,7 @@ def record_movies():
     duckdb_con.close()
     os.remove(daily_file_name)
 
+    # Adding title and last updated header
     worksheet.update("B2", "Fantasy Box Office Standings")
     worksheet.format(
         "B2",
@@ -191,6 +198,7 @@ def record_movies():
         },
     )
 
+    # resizing columns
     column_sizes = {
         "A": 21,
         "B": 86,
