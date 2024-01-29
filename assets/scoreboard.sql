@@ -4,7 +4,7 @@ with full_table as (
         , case when round > 13 then 5 else 1 end as multiplier
         , multiplier * revenue as scored_revenue
         , revenue / budget as roi
-        , revenue > 0 as released
+        , release_date <= today() and release_date != '' as released
     from read_json_auto('<<daily_score>>')
 )
 

@@ -154,6 +154,29 @@ def record_movies():
             "B4",
             assets.get_scoreboard_format(),
         ),
+        (
+            query_to_df(
+                "assets/released_movies.sql",
+                source_tables={
+                    "daily_score": daily_file_name,
+                },
+                columns=[
+                    "Rank",
+                    "Title",
+                    "Drafted By",
+                    "Release Date*",
+                    "Days Since Released",
+                    "Revenue",
+                    "Scored Revenue",
+                    "Budget",
+                    "ROI",
+                    "Popularity",
+                    "Runtime (Mins)",
+                ],
+            ),
+            "H4",
+            assets.get_released_movies_format(),
+        ),
     )
 
     gc = gspread.service_account(
@@ -166,7 +189,7 @@ def record_movies():
     worksheet = sh.worksheet(worksheet_title)
 
     sh.del_worksheet(worksheet)
-    worksheet = sh.add_worksheet(title=worksheet_title, rows=10, cols=7, index=1)
+    worksheet = sh.add_worksheet(title=worksheet_title, rows=20, cols=19, index=1)
 
     # Adding each dashboard element
     for element in dashboard_elements:
@@ -197,6 +220,13 @@ def record_movies():
             "horizontalAlignment": "CENTER",
         },
     )
+    worksheet.update("H2", "Released Movies")
+    worksheet.format(
+        "H2",
+        {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
+    )
+    worksheet.merge_cells("H2:R2")
+    worksheet.update("H19", "*Movie release date is based on the international release date")
 
     # resizing columns
     column_sizes = {
@@ -207,6 +237,18 @@ def record_movies():
         "E": 110,
         "F": 130,
         "G": 21,
+        "H": 40,
+        "I": 150,
+        "J": 80,
+        "K": 100,
+        "L": 150,
+        "M": 100,
+        "N": 120,
+        "O": 100,
+        "P": 60,
+        "Q": 80,
+        "R": 110,
+        "S": 21,
     }
     for column, size in column_sizes.items():
         gsf.set_column_width(worksheet, column, size)
