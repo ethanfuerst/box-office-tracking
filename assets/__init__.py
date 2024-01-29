@@ -43,21 +43,8 @@ def get_released_movies_format():
                 "bold": True,
             },
         },
-        "H5:H": {
+        "H5:K": {
             "horizontalAlignment": "LEFT",
-        },
-        "I5:I": {
-            "horizontalAlignment": "LEFT",
-        },
-        "J5:J": {
-            "horizontalAlignment": "LEFT",
-        },
-        "K5:K": {
-            "horizontalAlignment": "LEFT",
-            "numberFormat": {
-                "type": "DATE",
-                "pattern": "m/d/yy",
-            },
         },
         "L5:L": {
             "horizontalAlignment": "LEFT",
