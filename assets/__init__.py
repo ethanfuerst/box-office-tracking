@@ -1,6 +1,6 @@
 def get_scoreboard_format():
     return {
-        "B4:F4": {
+        "B4:E4": {
             "horizontalAlignment": "CENTER",
             "textFormat": {
                 "fontSize": 10,
@@ -24,58 +24,57 @@ def get_scoreboard_format():
                 "pattern": "$#,##0",
             },
         },
-        "F5:F9": {
-            "horizontalAlignment": "RIGHT",
-            "numberFormat": {
-                "type": "PERCENT",
-                "pattern": "#0.0#%",
-            },
-        },
     }
 
 
 def get_released_movies_format():
     return {
-        "H4:R4": {
+        "G4:Q4": {
             "horizontalAlignment": "CENTER",
             "textFormat": {
                 "fontSize": 10,
                 "bold": True,
             },
         },
-        "H5:K": {
+        "H5:I": {
             "horizontalAlignment": "LEFT",
         },
-        "L5:L": {
+        "J5:K": {
             "horizontalAlignment": "LEFT",
             "numberFormat": {
-                "type": "NUMBER",
-                "pattern": "#",
+                "type": "CURRENCY",
+                "pattern": "$#,##0",
             },
         },
-        "M5:O": {
+        "L5:M": {
+            "horizontalAlignment": "RIGHT",
+        },
+        "N5:N": {
             "horizontalAlignment": "RIGHT",
             "numberFormat": {
                 "type": "CURRENCY",
                 "pattern": "$#,##0",
             },
         },
-        "P5:P": {
+        "O5:O": {
             "horizontalAlignment": "RIGHT",
             "numberFormat": {
                 "type": "PERCENT",
                 "pattern": "#0.0#%",
             },
         },
+        "P5:P": {
+            "horizontalAlignment": "RIGHT",
+            "numberFormat": {
+                "type": "CURRENCY",
+                "pattern": "$#,##0",
+            },
+        },
         "Q5:Q": {
             "horizontalAlignment": "RIGHT",
             "numberFormat": {
-                "type": "NUMBER",
-                "pattern": "#.0#",
+                "type": "PERCENT",
+                "pattern": "#0.0#%",
             },
-        },
-        "R5:R": {
-            "horizontalAlignment": "RIGHT",
-            "numberFormat": {"type": "NUMBER"},
         },
     }

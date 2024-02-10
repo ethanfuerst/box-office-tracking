@@ -1,14 +1,16 @@
 import os
 import sys
 import pandas as pd
-import numpy as np
 import datetime
 import modal
 import duckdb
-import requests
 import gspread
 import gspread_formatting as gsf
 import assets
+import html5lib
+import lxml
+import ssl
+from typing import List
 from pytz import timezone
 
 stub = modal.Stub("box-office-tracking")
@@ -19,68 +21,49 @@ modal_image = modal.Image.debian_slim(python_version="3.10").run_commands(
     "pip install pandas==2.1.4",
     "pip install gspread==5.12.4",
     "pip install gspread-formatting==1.1.2",
+    "pip install html5lib==1.1",
+    "pip install lxml==5.1.0",
 )
 
-table_name = (
-    f"movie_records_{datetime.datetime.now(timezone('US/Eastern')).strftime('%Y%m%d')}"
-)
-daily_file_name = "daily_score.json"
-s3_file = f"s3://box-office-tracking/{table_name}.parquet"
+ssl._create_default_https_context = ssl._create_unverified_context
 
-movie_id_regex = r".*movie\/(\d+)-.*"
+S3_DATE_FORMAT = "%Y%m%d"
 
 
-def get_movie_data(id, api_key):
-    if id is np.nan:
-        return None
+def load_current_intl_box_office_to_s3() -> None:
+    df = pd.read_html("https://www.boxofficemojo.com/year/world/")[0]
 
-    url = f"https://api.themoviedb.org/3/movie/{id}?api_key={api_key}"
-
-    response = requests.get(url)
-
-    if response.status_code != 200:
-        print(f"Movie id {id} not found, skipping")
-        return None
-
-    data = response.json()
-
-    return {
-        key: response.json().get(key, None)
-        for key in [
-            "revenue",
-            "imdb_id",
-            "budget",
-            "title",
-            "status",
-            "release_date",
-            "runtime",
-            "vote_average",
-            "vote_count",
-            "popularity",
-        ]
-    }
-
-
-def create_data(api_key):
-    df = pd.read_csv("assets/box_office_draft.csv")
-
-    df["movie_id"] = df["url"].str.extract(movie_id_regex)
-    df["stats"] = df["movie_id"].apply(lambda x: get_movie_data(x, api_key))
-    df = df.join(pd.json_normalize(df["stats"])).drop("stats", axis="columns")
-
-    df["title"] = df["title"].fillna(df["movie"])
-    df = df.drop("movie", axis="columns")
-    df["record_date"] = str(datetime.date.today())
-
-    df.to_json(daily_file_name, orient="records")
-    print(
-        f'Created "{daily_file_name}" with {df.shape[0]} rows and {df.shape[1]} columns'
+    box_office_data_table_name = (
+        f"boxofficemojo_ytd_{datetime.datetime.today().strftime(S3_DATE_FORMAT)}"
     )
+    box_office_data_file_name = f"{box_office_data_table_name}.json"
+    s3_file = f"s3://box-office-tracking/{box_office_data_table_name}.parquet"
+
+    df.to_json(box_office_data_file_name, orient="records")
+
+    duckdb_con = duckdb.connect()
+    duckdb_con.execute(
+        f"""install httpfs;
+        load httpfs;
+        set s3_endpoint='nyc3.digitaloceanspaces.com';
+        set s3_region='nyc3';
+        set s3_access_key_id='{os.environ["S3_ACCESS_KEY_ID"]}';
+        set s3_secret_access_key='{os.environ["S3_SECRET_ACCESS_KEY"]}';"""
+    )
+    duckdb_con.execute(
+        f"copy (select * from read_json_auto('{box_office_data_table_name}.json')) to '{s3_file}';"
+    )
+    row_count = f"select count(*) from '{s3_file}';"
+    print(
+        f"Updated {s3_file} with {duckdb_con.sql(row_count).fetchnumpy()['count_star()'][0]} rows"
+    )
+    duckdb_con.close()
+    os.remove(box_office_data_file_name)
 
     return
 
 
-def df_to_sheet(df, worksheet, location, format=None):
+def df_to_sheet(df, worksheet, location, format=None) -> None:
     worksheet.update(
         range_name=location, values=[df.columns.values.tolist()] + df.values.tolist()
     )
@@ -92,13 +75,19 @@ def df_to_sheet(df, worksheet, location, format=None):
     return
 
 
-def query_to_df(query_location, source_tables=None, columns=None):
+def query_to_str(query_location: str) -> str:
     with open(query_location, "r") as file:
-        query = file.read().replace("\n", " ")
+        query = file.read().replace("\n", " ").replace("\t", " ")
+
+    return query
+
+
+def query_to_df(query_location, source_tables=None, columns=None) -> pd.DataFrame:
+    query = query_to_str(query_location)
 
     if source_tables:
-        for source_table_name, source_table_location in source_tables.items():
-            query = query.replace(f"<<{source_table_name}>>", source_table_location)
+        for source_table_name, source_table_def in source_tables.items():
+            query = query.replace(f"<<{source_table_name}>>", source_table_def)
 
     df = duckdb.query(query).to_df()
     if columns:
@@ -118,8 +107,7 @@ def query_to_df(query_location, source_tables=None, columns=None):
     ],
 )
 def record_movies():
-    MOVIE_DB_API_KEY = os.environ["MOVIE_DB_API_KEY"]
-    create_data(MOVIE_DB_API_KEY)
+    load_current_intl_box_office_to_s3()
 
     duckdb_con = duckdb.connect()
     duckdb_con.execute(
@@ -130,32 +118,29 @@ def record_movies():
         set s3_access_key_id='{os.environ["S3_ACCESS_KEY_ID"]}';
         set s3_secret_access_key='{os.environ["S3_SECRET_ACCESS_KEY"]}';"""
     )
-
     duckdb_con.execute(
-        f"copy (select * from read_json_auto('{daily_file_name}')) to '{s3_file}';"
+        f"copy (select * from read_parquet('s3://box-office-tracking/boxofficemojo_ytd_*')) to 's3_dump.json';"
     )
-    row_count = f"select count(*) from '{s3_file}';"
+    row_count = f"select count(*) from 's3_dump.json';"
     print(
-        f"Updated {s3_file} with {duckdb_con.sql(row_count).fetchnumpy()['count_star()'][0]} rows"
+        f"Read {duckdb_con.sql(row_count).fetchnumpy()['count_star()'][0]} rows from s3 bucket"
     )
+    duckdb_con.close()
 
     released_movies_df = query_to_df(
-        "assets/released_movies.sql",
-        source_tables={
-            "daily_score": daily_file_name,
-        },
+        "assets/base_query.sql",
         columns=[
             "Rank",
             "Title",
             "Drafted By",
-            "Release Date*",
-            "Days Since Released",
             "Revenue",
             "Scored Revenue",
-            "Budget",
-            "ROI",
-            "Popularity",
-            "Runtime (Mins)",
+            "Round Drafted",
+            "Multiplier",
+            "Domestic Revenue",
+            "Domestic Revenue %",
+            "Foreign Revenue",
+            "Foreign Revenue %",
         ],
     )
 
@@ -164,14 +149,13 @@ def record_movies():
             query_to_df(
                 "assets/scoreboard.sql",
                 source_tables={
-                    "daily_score": daily_file_name,
+                    "base_query": query_to_str("assets/base_query.sql"),
                 },
                 columns=[
                     "Name",
                     "Scored Revenue",
                     "# Released",
-                    "Total Budget",
-                    "Avg ROI",
+                    "Unadjusted Revenue",
                 ],
             ),
             "B4",
@@ -179,7 +163,7 @@ def record_movies():
         ),
         (
             released_movies_df,
-            "H4",
+            "G4",
             assets.get_released_movies_format(),
         ),
     )
@@ -194,10 +178,10 @@ def record_movies():
     worksheet = sh.worksheet(worksheet_title)
 
     sh.del_worksheet(worksheet)
-    # 3 rows for title, 1 row for column titles, 2 rows for padding around footer, 1 row for footer
-    sheet_height = len(released_movies_df) + 7
+    # 3 rows for title, 1 row for column titles, 1 row for footer
+    sheet_height = len(released_movies_df) + 5
     worksheet = sh.add_worksheet(
-        title=worksheet_title, rows=sheet_height, cols=19, index=1
+        title=worksheet_title, rows=sheet_height, cols=18, index=1
     )
 
     # Adding each dashboard element
@@ -210,7 +194,7 @@ def record_movies():
         )
 
     duckdb_con.close()
-    os.remove(daily_file_name)
+    os.remove("s3_dump.json")
 
     # Adding title and last updated header
     worksheet.update("B2", "Fantasy Box Office Standings")
@@ -218,49 +202,44 @@ def record_movies():
         "B2",
         {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
     )
-    worksheet.merge_cells("B2:E2")
+    worksheet.merge_cells("B2:D2")
     worksheet.update(
-        "F2",
+        "E2",
         f"Last Updated UTC\n{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
     )
     worksheet.format(
-        "F2",
+        "E2",
         {
             "horizontalAlignment": "CENTER",
         },
     )
-    worksheet.update("H2", "Released Movies")
+    worksheet.update("G2", "Released Movies")
     worksheet.format(
-        "H2",
+        "G2",
         {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
     )
-    worksheet.merge_cells("H2:R2")
-    worksheet.update(
-        f"H{sheet_height - 1}",
-        "*Movie release date is based on the international release date",
-    )
+    worksheet.merge_cells("G2:Q2")
 
     # resizing columns
     column_sizes = {
-        "A": 21,
-        "B": 86,
-        "C": 130,
-        "D": 100,
-        "E": 110,
-        "F": 130,
-        "G": 21,
-        "H": 40,
-        "I": 150,
-        "J": 80,
-        "K": 100,
-        "L": 150,
-        "M": 100,
-        "N": 120,
-        "O": 100,
-        "P": 60,
-        "Q": 80,
-        "R": 110,
-        "S": 21,
+        "A": 25,
+        "B": 94,
+        "C": 160,
+        "D": 135,
+        "E": 143,
+        "F": 25,
+        "G": 40,
+        "H": 150,
+        "I": 80,
+        "J": 100,
+        "K": 120,
+        "L": 100,
+        "M": 80,
+        "N": 130,
+        "O": 150,
+        "P": 120,
+        "Q": 135,
+        "R": 25,
     }
     for column, size in column_sizes.items():
         gsf.set_column_width(worksheet, column, size)
