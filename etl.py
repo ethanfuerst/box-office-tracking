@@ -30,7 +30,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 S3_DATE_FORMAT = "%Y%m%d"
 
 
-def load_current_intl_box_office_to_s3() -> None:
+def load_current_worldwide_box_office_to_s3() -> None:
     df = pd.read_html("https://www.boxofficemojo.com/year/world/")[0]
 
     box_office_data_table_name = (
@@ -55,7 +55,7 @@ def load_current_intl_box_office_to_s3() -> None:
     )
     row_count = f"select count(*) from '{s3_file}';"
     print(
-        f"Updated {s3_file} with {duckdb_con.sql(row_count).fetchnumpy()['count_star()'][0]} rows"
+        f"Updated {s3_file} with {duckdb_con.sql(row_count).fetchnumpy()['count_star()'][0]} rows."
     )
     duckdb_con.close()
     os.remove(box_office_data_file_name)
@@ -95,6 +95,24 @@ def query_to_df(query_location, source_tables=None, columns=None) -> pd.DataFram
 
     return df
 
+def get_most_recent_s3_date() -> datetime.date:
+    duckdb_con = duckdb.connect()
+    duckdb_con.execute(
+        f"""install httpfs;
+        load httpfs;
+        set s3_endpoint='nyc3.digitaloceanspaces.com';
+        set s3_region='nyc3';
+        set s3_access_key_id='{os.environ["S3_ACCESS_KEY_ID"]}';
+        set s3_secret_access_key='{os.environ["S3_SECRET_ACCESS_KEY"]}';"""
+    )
+    max_date = duckdb_con.sql(
+        f"""select
+            max(make_date(file[44:47]::int, file[48:49]::int, file[50:51]::int)) as max_date
+        from glob('s3://box-office-tracking/boxofficemojo_ytd_*');"""
+    )
+    return_val = max_date.fetchnumpy()['max_date'][0].astype(datetime.date).date()
+    duckdb_con.close()
+    return return_val
 
 @stub.function(
     image=modal_image,
@@ -107,7 +125,9 @@ def query_to_df(query_location, source_tables=None, columns=None) -> pd.DataFram
     ],
 )
 def record_movies():
-    load_current_intl_box_office_to_s3()
+    if get_most_recent_s3_date() < datetime.date.today():
+        print('Loading new worldwide box office data to s3')
+        load_current_worldwide_box_office_to_s3()
 
     duckdb_con = duckdb.connect()
     duckdb_con.execute(
@@ -116,14 +136,21 @@ def record_movies():
         set s3_endpoint='nyc3.digitaloceanspaces.com';
         set s3_region='nyc3';
         set s3_access_key_id='{os.environ["S3_ACCESS_KEY_ID"]}';
-        set s3_secret_access_key='{os.environ["S3_SECRET_ACCESS_KEY"]}';"""
-    )
-    duckdb_con.execute(
-        f"copy (select * from read_parquet('s3://box-office-tracking/boxofficemojo_ytd_*')) to 's3_dump.json';"
+        set s3_secret_access_key='{os.environ["S3_SECRET_ACCESS_KEY"]}';
+        
+        copy (
+            select
+                "Release Group" as title
+                , replace("Worldwide"[2:], ',', '')::int as revenue
+                , coalesce(nullif(replace("Domestic"[2:], ',', ''), ''), 0)::int as domestic_rev
+                , coalesce(nullif(replace("Foreign"[2:], ',', ''), ''), 0)::int as foreign_rev
+            from read_parquet('s3://box-office-tracking/boxofficemojo_ytd_*')
+            qualify row_number() over (partition by title order by revenue desc) = 1
+        ) to 's3_dump.json';"""
     )
     row_count = f"select count(*) from 's3_dump.json';"
     print(
-        f"Read {duckdb_con.sql(row_count).fetchnumpy()['count_star()'][0]} rows from s3 bucket"
+        f"Read {duckdb_con.sql(row_count).fetchnumpy()['count_star()'][0]} rows with query from s3 bucket"
     )
     duckdb_con.close()
 
