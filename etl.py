@@ -193,7 +193,6 @@ def record_movies():
             format=element[2] if len(element) > 2 else None,
         )
 
-    duckdb_con.close()
     os.remove("s3_dump.json")
 
     # Adding title and last updated header
