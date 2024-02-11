@@ -29,7 +29,7 @@ def get_scoreboard_format():
 
 def get_released_movies_format():
     return {
-        "G4:Q4": {
+        "G4:R4": {
             "horizontalAlignment": "CENTER",
             "textFormat": {
                 "fontSize": 10,
@@ -46,31 +46,31 @@ def get_released_movies_format():
                 "pattern": "$#,##0",
             },
         },
-        "L5:M": {
+        "L5:N": {
             "horizontalAlignment": "RIGHT",
         },
-        "N5:N": {
+        "O5:O": {
             "horizontalAlignment": "RIGHT",
             "numberFormat": {
                 "type": "CURRENCY",
                 "pattern": "$#,##0",
             },
         },
-        "O5:O": {
+        "P5:P": {
             "horizontalAlignment": "RIGHT",
             "numberFormat": {
                 "type": "PERCENT",
                 "pattern": "#0.0#%",
             },
         },
-        "P5:P": {
+        "Q5:Q": {
             "horizontalAlignment": "RIGHT",
             "numberFormat": {
                 "type": "CURRENCY",
                 "pattern": "$#,##0",
             },
         },
-        "Q5:Q": {
+        "R5:R": {
             "horizontalAlignment": "RIGHT",
             "numberFormat": {
                 "type": "PERCENT",

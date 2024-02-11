@@ -95,6 +95,7 @@ def query_to_df(query_location, source_tables=None, columns=None) -> pd.DataFram
 
     return df
 
+
 def get_most_recent_s3_date() -> datetime.date:
     duckdb_con = duckdb.connect()
     duckdb_con.execute(
@@ -110,9 +111,10 @@ def get_most_recent_s3_date() -> datetime.date:
             max(make_date(file[44:47]::int, file[48:49]::int, file[50:51]::int)) as max_date
         from glob('s3://box-office-tracking/boxofficemojo_ytd_*');"""
     )
-    return_val = max_date.fetchnumpy()['max_date'][0].astype(datetime.date).date()
+    return_val = max_date.fetchnumpy()["max_date"][0].astype(datetime.date).date()
     duckdb_con.close()
     return return_val
+
 
 @stub.function(
     image=modal_image,
@@ -126,7 +128,7 @@ def get_most_recent_s3_date() -> datetime.date:
 )
 def record_movies():
     if get_most_recent_s3_date() < datetime.date.today():
-        print('Loading new worldwide box office data to s3')
+        print("Loading new worldwide box office data to s3")
         load_current_worldwide_box_office_to_s3()
 
     duckdb_con = duckdb.connect()
@@ -163,6 +165,7 @@ def record_movies():
             "Revenue",
             "Scored Revenue",
             "Round Drafted",
+            "Overall Pick",
             "Multiplier",
             "Domestic Revenue",
             "Domestic Revenue %",
@@ -208,7 +211,7 @@ def record_movies():
     # 3 rows for title, 1 row for column titles, 1 row for footer
     sheet_height = len(released_movies_df) + 5
     worksheet = sh.add_worksheet(
-        title=worksheet_title, rows=sheet_height, cols=18, index=1
+        title=worksheet_title, rows=sheet_height, cols=19, index=1
     )
 
     # Adding each dashboard element
@@ -244,7 +247,7 @@ def record_movies():
         "G2",
         {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
     )
-    worksheet.merge_cells("G2:Q2")
+    worksheet.merge_cells("G2:R2")
 
     # resizing columns
     column_sizes = {
@@ -260,12 +263,13 @@ def record_movies():
         "J": 100,
         "K": 120,
         "L": 100,
-        "M": 80,
-        "N": 130,
-        "O": 150,
-        "P": 120,
-        "Q": 135,
-        "R": 25,
+        "M": 90,
+        "N": 80,
+        "O": 130,
+        "P": 150,
+        "Q": 120,
+        "R": 135,
+        "S": 25,
     }
     for column, size in column_sizes.items():
         gsf.set_column_width(worksheet, column, size)

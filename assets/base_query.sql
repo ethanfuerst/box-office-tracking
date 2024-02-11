@@ -9,9 +9,10 @@ with base_table as (
 
 , drafter as (
     select
-        movie
+        round
+        , overall as overall_pick
         , name
-        , round
+        , movie
     from read_csv('assets/box_office_draft.csv', auto_detect=true)
 )
 
@@ -19,6 +20,7 @@ with base_table as (
     select
         base_table.title
         , drafter.name as drafted_by
+        , drafter.overall_pick
         , base_table.revenue
         , drafter.round
         , case when drafter.round > 13 then 5 else 1 end as multiplier
@@ -39,6 +41,7 @@ select
     , revenue
     , scored_revenue
     , round
+    , overall_pick
     , multiplier
     , domestic_rev
     , domestic_pct
