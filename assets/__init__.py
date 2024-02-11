@@ -29,7 +29,7 @@ def get_scoreboard_format():
 
 def get_released_movies_format():
     return {
-        "G4:R4": {
+        "G4:U4": {
             "horizontalAlignment": "CENTER",
             "textFormat": {
                 "fontSize": 10,
@@ -75,6 +75,13 @@ def get_released_movies_format():
             "numberFormat": {
                 "type": "PERCENT",
                 "pattern": "#0.0#%",
+            },
+        },
+        "T5:T": {
+            "horizontalAlignment": "RIGHT",
+            "numberFormat": {
+                "type": "CURRENCY",
+                "pattern": "$#,##0",
             },
         },
     }

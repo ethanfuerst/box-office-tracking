@@ -171,6 +171,8 @@ def record_movies():
             "Domestic Revenue %",
             "Foreign Revenue",
             "Foreign Revenue %",
+            "Better Pick",
+            "Better Pick Scored Revenue",
         ],
     )
 
@@ -211,7 +213,7 @@ def record_movies():
     # 3 rows for title, 1 row for column titles, 1 row for footer
     sheet_height = len(released_movies_df) + 5
     worksheet = sh.add_worksheet(
-        title=worksheet_title, rows=sheet_height, cols=19, index=1
+        title=worksheet_title, rows=sheet_height, cols=21, index=1
     )
 
     # Adding each dashboard element
@@ -247,7 +249,11 @@ def record_movies():
         "G2",
         {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
     )
-    worksheet.merge_cells("G2:R2")
+    worksheet.merge_cells("G2:T2")
+
+    for i in range(5, sheet_height):
+        if worksheet.acell(f"T{i}").value == "$0":
+            worksheet.update(f"T{i}", "")
 
     # resizing columns
     column_sizes = {
@@ -269,7 +275,9 @@ def record_movies():
         "P": 150,
         "Q": 120,
         "R": 135,
-        "S": 25,
+        "S": 150,
+        "T": 190,
+        "U": 25,
     }
     for column, size in column_sizes.items():
         gsf.set_column_width(worksheet, column, size)
