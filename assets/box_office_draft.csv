@@ -1,76 +1,76 @@
-name,round,movie
-Troy,1,Despicable Me 4
-Troy,2,Dune: Part Two
-Troy,3,The Lord of the Rings: The War of the Rohirrim
-Troy,4,Karate Kid
-Troy,5,Beetlejuice 2
-Troy,6,IF
-Troy,7,Ghostbusters: Frozen Empire
-Troy,8,Challengers
-Troy,9,The Amateur
-Troy,10,Arthur the King
-Troy,11,I.S.S.
-Troy,12,The Book of Clarence
-Troy,13,Out of Darkness
-Troy,14,Origin
-Troy,15,The Watchers
-Ethan,1,Deadpool 3
-Ethan,2,Venom 3
-Ethan,3,Transformers One
-Ethan,4,Incredibles 3
-Ethan,5,Sonic the Hedgehog 3
-Ethan,6,Madame Web
-Ethan,7,Borderlands
-Ethan,8,Harold and the Purple Crayon
-Ethan,9,Project Artemis
-Ethan,10,Nosferatu
-Ethan,11,The Bikeriders
-Ethan,12,The Wild Robot
-Ethan,13,What About Love
-Ethan,14,One Life
-Ethan,15,Imaginary
-Larry,1,Kingdom of the Planet of the Apes
-Larry,2,Godzilla x Kong: The New Empire
-Larry,3,Furiosa: A Mad Max Saga
-Larry,4,Bad Boys 4
-Larry,5,The Garfield Movie
-Larry,6,The Fall Guy
-Larry,7,Argylle
-Larry,8,Smile 2
-Larry,9,Saw XI
-Larry,10,The American Society of Magical Negroes
-Larry,11,Rayman's Big Movie
-Larry,12,Alto Knights 
-Larry,13,White Bird
-Larry,14,Lisa Frankenstein
-Larry,15,Terrifier 3
-Holden,1,Joker: Folie a Deux
-Holden,2,Kung Fu Panda 4
-Holden,3,Wicked
-Holden,4,A Quiet Place: Day One
-Holden,5,Bob Marley: One Love
-Holden,6,Civil War
-Holden,7,Ballerina
-Holden,8,Trap
-Holden,9,Wolfs
-Holden,10,Monkeypaw Movie
-Holden,11,It Ends with Us
-Holden,12,The Beekeeper
-Holden,13,Land of Bad
-Holden,14,The First Omen
-Holden,15,Horrorscope
-Nahiyan,1,Inside Out 2
-Nahiyan,2,Mufasa: The Lion King
-Nahiyan,3,Mean Girls
-Nahiyan,4,Gladiator 2
-Nahiyan,5,Alien: Romulus
-Nahiyan,6,Twisters
-Nahiyan,7,Mickey 17
-Nahiyan,8,Horizon: An American Saga
-Nahiyan,9,Kraven the Hunter
-Nahiyan,10,Speak No Evil
-Nahiyan,11,Wolf Man
-Nahiyan,12,Drive Away Dolls
-Nahiyan,13,Horizon: An American Saga - Chapter 2
-Nahiyan,14,Flint Strong
-Nahiyan,15,The Strangers: Chapter 1
+round,overall,name,movie
+1,1,Troy,Despicable Me 4
+1,2,Ethan,Deadpool 3
+1,3,Nahiyan,Inside Out 2
+1,4,Larry,Kingdom of the Planet of the Apes
+1,5,Holden,Joker: Folie a Deux
+2,6,Holden,Kung Fu Panda 4
+2,7,Larry,Godzilla x Kong: The New Empire
+2,8,Nahiyan,Mufasa: The Lion King
+2,9,Ethan,Venom 3
+2,10,Troy,Dune: Part Two
+3,11,Troy,The Lord of the Rings: The War of the Rohirrim
+3,12,Ethan,Transformers One
+3,13,Nahiyan,Mean Girls
+3,14,Larry,Furiosa: A Mad Max Saga
+3,15,Holden,Wicked
+4,16,Holden,A Quiet Place: Day One
+4,17,Larry,Bad Boys 4
+4,18,Nahiyan,Gladiator 2
+4,19,Ethan,Incredibles 3
+4,20,Troy,Karate Kid
+5,21,Troy,Beetlejuice 2
+5,22,Ethan,Sonic the Hedgehog 3
+5,23,Nahiyan,Alien: Romulus
+5,24,Larry,The Garfield Movie
+5,25,Holden,Bob Marley: One Love
+6,26,Holden,Civil War
+6,27,Larry,The Fall Guy
+6,28,Nahiyan,Twisters
+6,29,Ethan,Madame Web
+6,30,Troy,IF
+7,31,Troy,Ghostbusters: Frozen Empire
+7,32,Ethan,Borderlands
+7,33,Nahiyan,Mickey 17
+7,34,Larry,Argylle
+7,35,Holden,Ballerina
+8,36,Holden,Trap
+8,37,Larry,Smile 2
+8,38,Nahiyan,Horizon: An American Saga
+8,39,Ethan,Harold and the Purple Crayon
+8,40,Troy,Challengers
+9,41,Troy,The Amateur
+9,42,Ethan,Project Artemis
+9,43,Nahiyan,Kraven the Hunter
+9,44,Larry,Saw XI
+9,45,Holden,Wolfs
+10,46,Holden,Monkeypaw Movie
+10,47,Larry,The American Society of Magical Negroes
+10,48,Nahiyan,Speak No Evil
+10,49,Ethan,Nosferatu
+10,50,Troy,Arthur the King
+11,51,Troy,I.S.S.
+11,52,Ethan,The Bikeriders
+11,53,Nahiyan,Wolf Man
+11,54,Larry,Rayman's Big Movie
+11,55,Holden,It Ends with Us
+12,56,Holden,The Beekeeper
+12,57,Larry,Alto Knights
+12,58,Nahiyan,Drive Away Dolls
+12,59,Ethan,The Wild Robot
+12,60,Troy,The Book of Clarence
+13,61,Troy,Out of Darkness
+13,62,Ethan,What About Love
+13,63,Nahiyan,Horizon: An American Saga - Chapter 2
+13,64,Larry,White Bird
+13,65,Holden,Land of Bad
+14,66,Holden,The First Omen
+14,67,Larry,Lisa Frankenstein
+14,68,Nahiyan,Flint Strong
+14,69,Ethan,One Life
+14,70,Troy,Origin
+15,71,Troy,The Watchers
+15,72,Ethan,Imaginary
+15,73,Nahiyan,The Strangers: Chapter 1
+15,74,Larry,Terrifier 3
+15,75,Holden,Horrorscope
