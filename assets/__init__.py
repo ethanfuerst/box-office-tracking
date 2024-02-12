@@ -1,23 +1,30 @@
 def get_scoreboard_format():
     return {
-        "B4:E4": {
+        "B4:G4": {  # Column Titles
             "horizontalAlignment": "CENTER",
             "textFormat": {
                 "fontSize": 10,
                 "bold": True,
             },
         },
-        "B5:B9": {
+        "B5:B9": {  # Name
             "horizontalAlignment": "LEFT",
         },
-        "C5:C9": {
+        "C5:C9": {  # Scored Revenue
             "horizontalAlignment": "RIGHT",
             "numberFormat": {
                 "type": "CURRENCY",
                 "pattern": "$#,##0",
             },
         },
-        "E5:E9": {
+        "F5:F9": {  # % Optimal Picks
+            "horizontalAlignment": "RIGHT",
+            "numberFormat": {
+                "type": "PERCENT",
+                "pattern": "#0.0#%",
+            },
+        },
+        "G5:G9": {  # Unadjusted Revenue
             "horizontalAlignment": "RIGHT",
             "numberFormat": {
                 "type": "CURRENCY",
@@ -29,55 +36,55 @@ def get_scoreboard_format():
 
 def get_released_movies_format():
     return {
-        "G4:U4": {
+        "I4:V4": {  # Column Titles
             "horizontalAlignment": "CENTER",
             "textFormat": {
                 "fontSize": 10,
                 "bold": True,
             },
         },
-        "H5:I": {
+        "I5:K": {  # Rank to Drafted By
             "horizontalAlignment": "LEFT",
         },
-        "J5:K": {
+        "L5:M": {  # Revenue to Scored Revenue
             "horizontalAlignment": "LEFT",
             "numberFormat": {
                 "type": "CURRENCY",
                 "pattern": "$#,##0",
             },
         },
-        "L5:N": {
+        "N5:P": {  # Round Drafted to Multiplier
             "horizontalAlignment": "RIGHT",
         },
-        "O5:O": {
+        "Q5:Q": {  # Domestic Revenue
             "horizontalAlignment": "RIGHT",
             "numberFormat": {
                 "type": "CURRENCY",
                 "pattern": "$#,##0",
             },
         },
-        "P5:P": {
+        "R5:R": {  # Domestic Revenue %
             "horizontalAlignment": "RIGHT",
             "numberFormat": {
                 "type": "PERCENT",
                 "pattern": "#0.0#%",
             },
         },
-        "Q5:Q": {
+        "S5:S": {  # Foreign Revenue
             "horizontalAlignment": "RIGHT",
             "numberFormat": {
                 "type": "CURRENCY",
                 "pattern": "$#,##0",
             },
         },
-        "R5:R": {
+        "T5:T": {  # Foreign Revenue %
             "horizontalAlignment": "RIGHT",
             "numberFormat": {
                 "type": "PERCENT",
                 "pattern": "#0.0#%",
             },
         },
-        "T5:T": {
+        "V5:V": {  # Better Pick Scored Revenue
             "horizontalAlignment": "RIGHT",
             "numberFormat": {
                 "type": "CURRENCY",

@@ -187,6 +187,8 @@ def record_movies():
                     "Name",
                     "Scored Revenue",
                     "# Released",
+                    "# Optimal Picks",
+                    "% Optimal Picks",
                     "Unadjusted Revenue",
                 ],
             ),
@@ -195,7 +197,7 @@ def record_movies():
         ),
         (
             released_movies_df,
-            "G4",
+            "I4",
             assets.get_released_movies_format(),
         ),
     )
@@ -213,7 +215,7 @@ def record_movies():
     # 3 rows for title, 1 row for column titles, 1 row for footer
     sheet_height = len(released_movies_df) + 5
     worksheet = sh.add_worksheet(
-        title=worksheet_title, rows=sheet_height, cols=21, index=1
+        title=worksheet_title, rows=sheet_height, cols=23, index=1
     )
 
     # Adding each dashboard element
@@ -233,51 +235,53 @@ def record_movies():
         "B2",
         {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
     )
-    worksheet.merge_cells("B2:D2")
+    worksheet.merge_cells("B2:F2")
     worksheet.update(
-        "E2",
+        "G2",
         f"Last Updated UTC\n{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
     )
     worksheet.format(
-        "E2",
+        "G2",
         {
             "horizontalAlignment": "CENTER",
         },
     )
-    worksheet.update("G2", "Released Movies")
+    worksheet.update("I2", "Released Movies")
     worksheet.format(
-        "G2",
+        "I2",
         {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
     )
-    worksheet.merge_cells("G2:T2")
+    worksheet.merge_cells("I2:V2")
 
     for i in range(5, sheet_height):
-        if worksheet.acell(f"T{i}").value == "$0":
-            worksheet.update(f"T{i}", "")
+        if worksheet.acell(f"V{i}").value == "$0":
+            worksheet.update(f"V{i}", "")
 
     # resizing columns
     column_sizes = {
-        "A": 25,
-        "B": 94,
-        "C": 160,
-        "D": 135,
-        "E": 143,
-        "F": 25,
-        "G": 40,
-        "H": 150,
-        "I": 80,
-        "J": 100,
-        "K": 120,
-        "L": 100,
-        "M": 90,
-        "N": 80,
-        "O": 130,
-        "P": 150,
-        "Q": 120,
-        "R": 135,
-        "S": 150,
-        "T": 190,
-        "U": 25,
+        "A": 25,  # Space on far left side
+        "B": 60,  # Name
+        "C": 120,  # Scored Revenue
+        "D": 80,  # # Released
+        "E": 110,  # # Optimal Picks
+        "F": 110,  # % Optimal Picks
+        "G": 140,  # Unadjusted Revenue
+        "H": 25,  # Space between tables
+        "I": 40,  # Rank
+        "J": 160,  # Title
+        "K": 80,  # Drafted By
+        "L": 100,  # Revenue
+        "M": 120,  # Scored Revenue
+        "N": 100,  # Round Drafted
+        "O": 100,  # Overall Pick
+        "P": 70,  # Multiplier
+        "Q": 130,  # Domestic Revenue
+        "R": 150,  # Domestic Revenue %
+        "S": 120,  # Foreign Revenue
+        "T": 140,  # Foreign Revenue %
+        "U": 160,  # Better Pick
+        "V": 190,  # Better Pick Scored Revenue
+        "W": 25,  # Space on far right side
     }
     for column, size in column_sizes.items():
         gsf.set_column_width(worksheet, column, size)
