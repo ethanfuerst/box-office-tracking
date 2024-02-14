@@ -19,7 +19,7 @@ modal_image = modal.Image.debian_slim(python_version="3.10").run_commands(
     "pip install requests",
     "pip install duckdb==0.9.2",
     "pip install pandas==2.1.4",
-    "pip install gspread==5.12.4",
+    "pip install gspread==6.0.2",
     "pip install gspread-formatting==1.1.2",
     "pip install html5lib==1.1",
     "pip install lxml==5.1.0",
@@ -63,14 +63,14 @@ def load_current_worldwide_box_office_to_s3() -> None:
     return
 
 
-def df_to_sheet(df, worksheet, location, format=None) -> None:
+def df_to_sheet(df, worksheet, location, format_dict=None) -> None:
     worksheet.update(
         range_name=location, values=[df.columns.values.tolist()] + df.values.tolist()
     )
     print(f"Updated {location} with {df.shape[0]} rows and {df.shape[1]} columns")
 
-    if format:
-        for format_location, format_rules in format.items():
+    if format_dict:
+        for format_location, format_rules in format_dict.items():
             worksheet.format(ranges=format_location, format=format_rules)
     return
 
@@ -127,9 +127,9 @@ def get_most_recent_s3_date() -> datetime.date:
     ],
 )
 def record_movies():
-    if get_most_recent_s3_date() < datetime.date.today():
-        print("Loading new worldwide box office data to s3")
-        load_current_worldwide_box_office_to_s3()
+    # if get_most_recent_s3_date() < datetime.date.today():
+    #     print("Loading new worldwide box office data to s3")
+    #     load_current_worldwide_box_office_to_s3()
 
     duckdb_con = duckdb.connect()
     duckdb_con.execute(
@@ -224,21 +224,25 @@ def record_movies():
             df=element[0],
             worksheet=worksheet,
             location=element[1],
-            format=element[2] if len(element) > 2 else None,
+            format_dict=element[2] if len(element) > 2 else None,
         )
 
     os.remove("s3_dump.json")
 
     # Adding title and last updated header
-    worksheet.update("B2", "Fantasy Box Office Standings")
+    worksheet.update(values=[["Fantasy Box Office Standings"]], range_name="B2")
     worksheet.format(
         "B2",
         {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
     )
     worksheet.merge_cells("B2:F2")
     worksheet.update(
-        "G2",
-        f"Last Updated UTC\n{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        values=[
+            [
+                f"Last Updated UTC\n{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+            ]
+        ],
+        range_name="G2",
     )
     worksheet.format(
         "G2",
@@ -246,16 +250,10 @@ def record_movies():
             "horizontalAlignment": "CENTER",
         },
     )
-    worksheet.update("I2", "Released Movies")
-    worksheet.format(
-        "I2",
-        {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
-    )
-    worksheet.merge_cells("I2:V2")
 
     for i in range(5, sheet_height):
         if worksheet.acell(f"V{i}").value == "$0":
-            worksheet.update(f"V{i}", "")
+            worksheet.update(values=[[""]], range_name=f"V{i}")
 
     # resizing columns
     column_sizes = {
@@ -285,6 +283,20 @@ def record_movies():
     }
     for column, size in column_sizes.items():
         gsf.set_column_width(worksheet, column, size)
+
+    # Adding titles
+    worksheet.update(values=[["Fantasy Box Office Standings"]], range_name="B2")
+    worksheet.format(
+        "B2",
+        {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
+    )
+    worksheet.merge_cells("B2:F2")
+    worksheet.update(values=[["Released Movies"]], range_name="I2")
+    worksheet.format(
+        "I2",
+        {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
+    )
+    worksheet.merge_cells("I2:V2")
 
 
 if __name__ == "__main__":
