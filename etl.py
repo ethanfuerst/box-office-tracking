@@ -127,9 +127,9 @@ def get_most_recent_s3_date() -> datetime.date:
     ],
 )
 def record_movies():
-    # if get_most_recent_s3_date() < datetime.date.today():
-    #     print("Loading new worldwide box office data to s3")
-    #     load_current_worldwide_box_office_to_s3()
+    if get_most_recent_s3_date() < datetime.date.today():
+        print("Loading new worldwide box office data to s3")
+        load_current_worldwide_box_office_to_s3()
 
     duckdb_con = duckdb.connect()
     duckdb_con.execute(
@@ -229,13 +229,7 @@ def record_movies():
 
     os.remove("s3_dump.json")
 
-    # Adding title and last updated header
-    worksheet.update(values=[["Fantasy Box Office Standings"]], range_name="B2")
-    worksheet.format(
-        "B2",
-        {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
-    )
-    worksheet.merge_cells("B2:F2")
+    # Adding last updated header
     worksheet.update(
         values=[
             [
@@ -251,38 +245,44 @@ def record_movies():
         },
     )
 
+    # Columns are created with 12 point font, then auto resized and reduced to 10 point bold font
+    worksheet.columns_auto_resize(1, 7)
+    worksheet.columns_auto_resize(8, 22)
+
+    worksheet.format(
+        "B4:G4",
+        {
+            "horizontalAlignment": "CENTER",
+            "textFormat": {
+                "fontSize": 10,
+                "bold": True,
+            },
+        },
+    )
+    worksheet.format(
+        "I4:V4",
+        {
+            "horizontalAlignment": "CENTER",
+            "textFormat": {
+                "fontSize": 10,
+                "bold": True,
+            },
+        },
+    )
+
     for i in range(5, sheet_height):
         if worksheet.acell(f"V{i}").value == "$0":
             worksheet.update(values=[[""]], range_name=f"V{i}")
 
-    # resizing columns
-    column_sizes = {
-        "A": 25,  # Space on far left side
-        "B": 60,  # Name
-        "C": 120,  # Scored Revenue
-        "D": 80,  # # Released
-        "E": 110,  # # Optimal Picks
-        "F": 110,  # % Optimal Picks
-        "G": 140,  # Unadjusted Revenue
-        "H": 25,  # Space between tables
-        "I": 40,  # Rank
-        "J": 160,  # Title
-        "K": 80,  # Drafted By
-        "L": 100,  # Revenue
-        "M": 120,  # Scored Revenue
-        "N": 100,  # Round Drafted
-        "O": 100,  # Overall Pick
-        "P": 70,  # Multiplier
-        "Q": 130,  # Domestic Revenue
-        "R": 150,  # Domestic Revenue %
-        "S": 120,  # Foreign Revenue
-        "T": 140,  # Foreign Revenue %
-        "U": 160,  # Better Pick
-        "V": 190,  # Better Pick Scored Revenue
-        "W": 25,  # Space on far right side
-    }
-    for column, size in column_sizes.items():
-        gsf.set_column_width(worksheet, column, size)
+    # resizing spacer columns
+    spacer_columns = ["A", "H", "W"]
+    for column in spacer_columns:
+        gsf.set_column_width(worksheet, column, 25)
+
+    # for some reason the auto resize still cuts off some of the title
+    title_columns = ["J", "U"]
+    for column in title_columns:
+        gsf.set_column_width(worksheet, column, 160)
 
     # Adding titles
     worksheet.update(values=[["Fantasy Box Office Standings"]], range_name="B2")

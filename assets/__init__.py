@@ -3,8 +3,7 @@ def get_scoreboard_format():
         "B4:G4": {  # Column Titles
             "horizontalAlignment": "CENTER",
             "textFormat": {
-                "fontSize": 10,
-                "bold": True,
+                "fontSize": 12,
             },
         },
         "B5:B9": {  # Name
@@ -39,8 +38,7 @@ def get_released_movies_format():
         "I4:V4": {  # Column Titles
             "horizontalAlignment": "CENTER",
             "textFormat": {
-                "fontSize": 10,
-                "bold": True,
+                "fontSize": 12,
             },
         },
         "I5:K": {  # Rank to Drafted By
