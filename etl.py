@@ -120,7 +120,11 @@ def get_most_recent_s3_date() -> datetime.date:
     image=modal_image,
     schedule=modal.Cron("0 4 * * *"),
     secret=modal.Secret.from_name("box-office-tracking-secrets"),
-    retries=1,
+    retries=modal.Retries(
+        max_retries=3,
+        backoff_coefficient=1.0,
+        initial_delay=60.0,
+    ),
     mounts=[
         modal.Mount.from_local_dir("assets/", remote_path="/root/assets"),
         modal.Mount.from_local_dir("config/", remote_path="/root/config"),
