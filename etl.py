@@ -1,17 +1,19 @@
-import os
-import sys
-import pandas as pd
 import datetime
-import modal
 import duckdb
+import glob
 import gspread
 import gspread_formatting as gsf
-import assets
 import html5lib
 import lxml
+import modal
+import os
+import pandas as pd
 import ssl
-from typing import List
+import sys
+import assets
+
 from pytz import timezone
+from typing import List
 
 stub = modal.Stub("box-office-tracking")
 
@@ -82,23 +84,16 @@ def query_to_str(query_location: str) -> str:
     return query
 
 
-def query_to_df(query_location, source_tables=None, columns=None) -> pd.DataFrame:
-    query = query_to_str(query_location)
-
-    if source_tables:
-        for source_table_name, source_table_def in source_tables.items():
-            query = query.replace(f"<<{source_table_name}>>", source_table_def)
-
-    df = duckdb.query(query).to_df()
+def temp_table_to_df(table, db_con, columns=None) -> pd.DataFrame:
+    df = db_con.query(f"select * from {table}").df()
     if columns:
         df.columns = columns
 
     return df
 
 
-def get_most_recent_s3_date() -> datetime.date:
-    duckdb_con = duckdb.connect()
-    duckdb_con.execute(
+def get_most_recent_s3_date(db_con) -> datetime.date:
+    db_con.execute(
         f"""install httpfs;
         load httpfs;
         set s3_endpoint='nyc3.digitaloceanspaces.com';
@@ -106,13 +101,12 @@ def get_most_recent_s3_date() -> datetime.date:
         set s3_access_key_id='{os.environ["S3_ACCESS_KEY_ID"]}';
         set s3_secret_access_key='{os.environ["S3_SECRET_ACCESS_KEY"]}';"""
     )
-    max_date = duckdb_con.sql(
+    max_date = db_con.sql(
         f"""select
             max(make_date(file[44:47]::int, file[48:49]::int, file[50:51]::int)) as max_date
         from glob('s3://box-office-tracking/boxofficemojo_ytd_*');"""
     )
     return_val = max_date.fetchnumpy()["max_date"][0].astype(datetime.date).date()
-    duckdb_con.close()
     return return_val
 
 
@@ -131,7 +125,8 @@ def get_most_recent_s3_date() -> datetime.date:
     ],
 )
 def record_movies():
-    if get_most_recent_s3_date() < datetime.date.today():
+    duckdb_con = duckdb.connect()
+    if get_most_recent_s3_date(duckdb_con) < datetime.date.today():
         print("Loading new worldwide box office data to s3")
         load_current_worldwide_box_office_to_s3()
 
@@ -144,7 +139,7 @@ def record_movies():
         set s3_access_key_id='{os.environ["S3_ACCESS_KEY_ID"]}';
         set s3_secret_access_key='{os.environ["S3_SECRET_ACCESS_KEY"]}';
         
-        copy (
+        create temp table s3_dump as (
             select
                 "Release Group" as title
                 , replace("Worldwide"[2:], ',', '')::int as revenue
@@ -152,16 +147,19 @@ def record_movies():
                 , coalesce(nullif(replace("Foreign"[2:], ',', ''), ''), 0)::int as foreign_rev
             from read_parquet('s3://box-office-tracking/boxofficemojo_ytd_*')
             qualify row_number() over (partition by title order by revenue desc) = 1
-        ) to 's3_dump.json';"""
+        )"""
     )
-    row_count = f"select count(*) from 's3_dump.json';"
+    row_count = "select count(*) from s3_dump"
     print(
         f"Read {duckdb_con.sql(row_count).fetchnumpy()['count_star()'][0]} rows with query from s3 bucket"
     )
-    duckdb_con.close()
 
-    released_movies_df = query_to_df(
-        "assets/base_query.sql",
+    for sql_file in sorted(glob.glob("assets/*.sql")):
+        duckdb_con.execute(query_to_str(sql_file))
+
+    released_movies_df = temp_table_to_df(
+        "base_query",
+        duckdb_con,
         columns=[
             "Rank",
             "Title",
@@ -182,11 +180,9 @@ def record_movies():
 
     dashboard_elements = (
         (
-            query_to_df(
-                "assets/scoreboard.sql",
-                source_tables={
-                    "base_query": query_to_str("assets/base_query.sql"),
-                },
+            temp_table_to_df(
+                "scoreboard",
+                duckdb_con,
                 columns=[
                     "Name",
                     "Scored Revenue",
@@ -205,6 +201,7 @@ def record_movies():
             assets.get_released_movies_format(),
         ),
     )
+    duckdb_con.close()
 
     gc = gspread.service_account(
         filename="config/box-office-tracking-draft-e034f0e51fb4.json"
@@ -230,8 +227,6 @@ def record_movies():
             location=element[1],
             format_dict=element[2] if len(element) > 2 else None,
         )
-
-    os.remove("s3_dump.json")
 
     # Adding last updated header
     worksheet.update(
@@ -301,6 +296,8 @@ def record_movies():
         {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
     )
     worksheet.merge_cells("I2:V2")
+
+    print("Dashboard updated and formatted")
 
 
 if __name__ == "__main__":
