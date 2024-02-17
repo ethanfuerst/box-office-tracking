@@ -11,20 +11,19 @@ import pandas as pd
 import ssl
 import sys
 import assets
-
 from pytz import timezone
 from typing import List
 
 stub = modal.Stub("box-office-tracking")
 
 modal_image = modal.Image.debian_slim(python_version="3.10").run_commands(
-    "pip install requests",
     "pip install duckdb==0.9.2",
-    "pip install pandas==2.1.4",
-    "pip install gspread==6.0.2",
     "pip install gspread-formatting==1.1.2",
+    "pip install gspread==6.0.2",
     "pip install html5lib==1.1",
     "pip install lxml==5.1.0",
+    "pip install pandas==2.1.4",
+    "pip install requests",
 )
 
 ssl._create_default_https_context = ssl._create_unverified_context
