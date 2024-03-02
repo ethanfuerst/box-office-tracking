@@ -112,7 +112,7 @@ def get_most_recent_s3_date(db_con) -> datetime.date:
 @stub.function(
     image=modal_image,
     schedule=modal.Cron("0 4 * * *"),
-    secret=modal.Secret.from_name("box-office-tracking-secrets"),
+    secrets=[modal.Secret.from_name("box-office-tracking-secrets")],
     retries=modal.Retries(
         max_retries=3,
         backoff_coefficient=1.0,
