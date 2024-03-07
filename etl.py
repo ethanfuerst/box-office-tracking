@@ -129,7 +129,6 @@ def record_movies():
         print("Loading new worldwide box office data to s3")
         load_current_worldwide_box_office_to_s3()
 
-    duckdb_con = duckdb.connect()
     duckdb_con.execute(
         f"""install httpfs;
         load httpfs;
@@ -281,6 +280,14 @@ def record_movies():
     title_columns = ["J", "U"]
     for column in title_columns:
         gsf.set_column_width(worksheet, column, 160)
+
+    # revenue columns will also get cut off
+    revenue_columns = ["L", "M", "R", "S"]
+    for column in revenue_columns:
+        gsf.set_column_width(worksheet, column, 120)
+    
+    # gets resized wrong and have to do it manually
+    gsf.set_column_width(worksheet, "R", 142)
 
     # Adding titles
     worksheet.update(values=[["Fantasy Box Office Standings"]], range_name="B2")
