@@ -4,6 +4,7 @@ import glob
 import gspread
 import gspread_formatting as gsf
 import html5lib
+import json
 import lxml
 import modal
 import os
@@ -176,6 +177,23 @@ def record_movies():
         ],
     )
 
+    def remove_comments(obj):
+        if isinstance(obj, dict):
+            return {
+                k: remove_comments(v)
+                for k, v in obj.items()
+                if not k.startswith("_comment")
+            }
+        elif isinstance(obj, list):
+            return [remove_comments(item) for item in obj]
+        else:
+            return obj
+
+    def load_format_config(file_path: str) -> dict:
+        with open(file_path, "r") as file:
+            config = json.load(file)
+        return remove_comments(config)
+
     dashboard_elements = (
         (
             temp_table_to_df(
@@ -191,12 +209,12 @@ def record_movies():
                 ],
             ),
             "B4",
-            assets.get_scoreboard_format(),
+            load_format_config("assets/scoreboard_format.json"),
         ),
         (
             released_movies_df,
             "I4",
-            assets.get_released_movies_format(),
+            load_format_config("assets/released_movies_format.json"),
         ),
     )
     duckdb_con.close()
@@ -285,7 +303,7 @@ def record_movies():
     revenue_columns = ["L", "M", "R", "S"]
     for column in revenue_columns:
         gsf.set_column_width(worksheet, column, 120)
-    
+
     # gets resized wrong and have to do it manually
     gsf.set_column_width(worksheet, "R", 142)
 
