@@ -11,7 +11,6 @@ import os
 import pandas as pd
 import ssl
 import sys
-import assets
 from pytz import timezone
 from typing import List
 
