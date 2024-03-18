@@ -296,7 +296,7 @@ def record_movies():
     # for some reason the auto resize still cuts off some of the title
     title_columns = ["J", "U"]
     for column in title_columns:
-        gsf.set_column_width(worksheet, column, 160)
+        gsf.set_column_width(worksheet, column, 260)
 
     # revenue columns will also get cut off
     revenue_columns = ["L", "M", "R", "S"]
