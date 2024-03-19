@@ -12,8 +12,8 @@ from utils.db_connection import DuckDBConnection
 
 def get_duckdb_connection_for_latest_data() -> DuckDBConnection:
     duckdb_con = DuckDBConnection()
-    
+
     extract()
     transform()
-    
+
     return duckdb_con

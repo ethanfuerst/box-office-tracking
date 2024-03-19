@@ -2,9 +2,9 @@ import os
 import json
 import pandas as pd
 import datetime
+import logging
 import gspread
 import gspread_formatting as gsf
-
 from utils.db_connection import DuckDBConnection
 from utils.format import load_format_config
 from utils.query import query_to_str, temp_table_to_df
@@ -12,6 +12,7 @@ from utils.gspread_format import df_to_sheet
 from dotenv import load_dotenv
 
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 
 def load():
@@ -169,5 +170,5 @@ def load():
     )
     worksheet.merge_cells("I2:V2")
 
-    print("Dashboard updated and formatted")
+    logger.info("Dashboard updated and formatted")
     duckdb_con.close()
