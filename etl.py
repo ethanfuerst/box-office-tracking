@@ -50,7 +50,6 @@ def etl():
     logger.info("Completed ETL process.")
 
 
-
 if __name__ == "__main__":
     if args.deploy:
         logger.info("Deploying etl to Modal.")
