@@ -1,9 +1,9 @@
 import modal
 import logging
 import argparse
-from etl.extract import extract
-from etl.transform import transform
-from etl.load import load
+from etl_process.extract import extract
+from etl_process.transform import transform
+from etl_process.load import load
 from utils.logging_config import setup_logging
 
 setup_logging()
