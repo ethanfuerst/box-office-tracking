@@ -21,16 +21,16 @@ class DuckDBConnection:
 
         conn.execute(
             """
-            INSTALL httpfs;
-            LOAD httpfs;
+            install httpfs;
+            load httpfs;
             """
         )
         conn.execute(
             f"""
-            SET s3_endpoint='nyc3.digitaloceanspaces.com';
-            SET s3_region='nyc3';
-            SET s3_access_key_id='{s3_access_key_id}';
-            SET s3_secret_access_key='{s3_secret_access_key}';
+            set s3_endpoint='nyc3.digitaloceanspaces.com';
+            set s3_region='nyc3';
+            set s3_access_key_id='{s3_access_key_id}';
+            set s3_secret_access_key='{s3_secret_access_key}';
             """
         )
 
