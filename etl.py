@@ -22,14 +22,6 @@ modal_image = modal.Image.debian_slim(python_version="3.10").run_commands(
     "pip install python-dotenv==1.0.1",
 )
 
-parser = argparse.ArgumentParser(
-    description="Run the application locally or deploy to Modal."
-)
-parser.add_argument(
-    "--deploy", action="store_true", help="Deploy the application to Modal."
-)
-args = parser.parse_args()
-
 
 @stub.function(
     image=modal_image,
@@ -51,6 +43,13 @@ def etl():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Run the application locally or deploy to Modal."
+    )
+    parser.add_argument(
+        "--deploy", action="store_true", help="Deploy the application to Modal."
+    )
+    args = parser.parse_args()
     if args.deploy:
         logger.info("Deploying etl to Modal.")
         modal.runner.deploy_stub(stub)
