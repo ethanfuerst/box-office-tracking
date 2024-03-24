@@ -5,8 +5,8 @@ project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.append(project_root)
 
-from etl.extract import extract
-from etl.transform import transform
+from etl_process.extract import extract
+from etl_process.transform import transform
 from utils.db_connection import DuckDBConnection
 
 

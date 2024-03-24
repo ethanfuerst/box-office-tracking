@@ -1,4 +1,4 @@
-create temp table base_query as (
+create table base_query as (
     with base_table as (
         select
             title
@@ -17,7 +17,7 @@ create temp table base_query as (
         from read_csv('assets/box_office_draft.csv', auto_detect=true)
     )
 
-    , joined as (
+    , full_data as (
         select
             base_table.title
             , drafter.name as drafted_by
@@ -40,50 +40,56 @@ create temp table base_query as (
             picks.round
             , picks.overall_pick
             , picks.revenue
+            , picks.multiplier
             , count(better_picks.overall_pick) > 0 as better_pick_available
             , case
-                when better_pick_available
+                when better_pick_available and picks.multiplier = 1
+                    then max(better_picks.revenue)
+                when better_pick_available and picks.multiplier = 5
                     then max(better_picks.scored_revenue)
                 else 0
             end as better_pick_scored_revenue
-        from joined as picks
-        left join joined as better_picks
-            on picks.scored_revenue < better_picks.scored_revenue
+        from full_data as picks
+        left join full_data as better_picks
+            on picks.revenue < better_picks.revenue
             and picks.overall_pick < better_picks.overall_pick
         group by
             picks.round
             , picks.overall_pick
             , picks.revenue
+            , picks.multiplier
     )
 
     , better_pick_final as (
         select
             better_pick_calc.overall_pick
-            , better_picks2.title as better_pick_title
+            , better_picks_metadata.title as better_pick_title
             , better_pick_calc.better_pick_scored_revenue
         from better_pick_calc
-        left join joined as better_picks2
-            on better_pick_calc.better_pick_scored_revenue = better_picks2.scored_revenue
+        left join full_data as better_picks_metadata
+            on (better_pick_calc.better_pick_scored_revenue = better_picks_metadata.scored_revenue
+                or better_pick_calc.better_pick_scored_revenue = better_picks_metadata.revenue)
+            and better_pick_calc.overall_pick < better_picks_metadata.overall_pick
     )
 
     select
-        row_number() over (order by joined.scored_revenue desc) as rank
-        , joined.title
-        , joined.drafted_by
-        , joined.revenue
-        , joined.scored_revenue
-        , joined.round
-        , joined.overall_pick
-        , joined.multiplier
-        , joined.domestic_rev
-        , joined.domestic_pct
-        , joined.foreign_rev
-        , joined.foreign_pct
+        row_number() over (order by full_data.scored_revenue desc) as rank
+        , full_data.title
+        , full_data.drafted_by
+        , full_data.revenue
+        , full_data.scored_revenue
+        , full_data.round
+        , full_data.overall_pick
+        , full_data.multiplier
+        , full_data.domestic_rev
+        , full_data.domestic_pct
+        , full_data.foreign_rev
+        , full_data.foreign_pct
         , coalesce(better_pick_final.better_pick_title, '') as better_pick_title
         , coalesce(better_pick_final.better_pick_scored_revenue, 0) as better_pick_scored_revenue
-    from joined
+    from full_data
     left join better_pick_final
-        on joined.overall_pick = better_pick_final.overall_pick
+        on full_data.overall_pick = better_pick_final.overall_pick
     order by
         rank asc
 )

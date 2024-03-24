@@ -1,4 +1,4 @@
-create temp table scoreboard as (
+create table scoreboard as (
     select
         drafted_by as name
         , sum(scored_revenue) as scored_revenue

@@ -65,7 +65,7 @@ def load():
 
     gspread_credentials = os.getenv("GSPREAD_CREDENTIALS")
     if gspread_credentials is not None:
-        credentials_dict = json.loads(gspread_credentials.replace('\n', '\\n'))
+        credentials_dict = json.loads(gspread_credentials.replace("\n", "\\n"))
         gc = gspread.service_account_from_dict(credentials_dict)
     else:
         raise ValueError(
