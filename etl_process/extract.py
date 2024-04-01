@@ -70,6 +70,15 @@ def extract() -> None:
                 , coalesce(try_cast(replace("Foreign"[2:], ',', '') as integer), 0) as foreign_rev
             from read_parquet('s3://box-office-tracking/boxofficemojo_ytd_*')
             qualify row_number() over (partition by title order by revenue desc) = 1
+            
+            union all
+            
+            select
+                title
+                , revenue
+                , domestic_rev
+                , foreign_rev
+            from read_csv_auto('assets/manual_adds.csv')
         )"""
     )
     row_count = "select count(*) from s3_dump"
