@@ -72,7 +72,7 @@ def load():
             "GSPREAD_CREDENTIALS is not set or is invalid in the .env file."
         )
 
-    sh = gc.open("Fantasy Box Office")
+    sh = gc.open("2024 Fantasy Box Office Draft")
 
     worksheet_title = "Dashboard"
     worksheet = sh.worksheet(worksheet_title)
