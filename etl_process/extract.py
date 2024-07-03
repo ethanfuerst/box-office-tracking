@@ -63,22 +63,19 @@ def extract() -> None:
     duckdb_con.execute(
         f"""
         create temp table s3_dump as (
+            with all_data as (
+                select
+                    *
+                from read_parquet('s3://box-office-tracking/boxofficemojo_ytd_*', filename=true)
+            )
             select
                 "Release Group" as title
                 , replace("Worldwide"[2:], ',', '')::int as revenue
                 , coalesce(try_cast(replace("Domestic"[2:], ',', '') as integer), 0) as domestic_rev
                 , coalesce(try_cast(replace("Foreign"[2:], ',', '') as integer), 0) as foreign_rev
-            from read_parquet('s3://box-office-tracking/boxofficemojo_ytd_*')
-            qualify row_number() over (partition by title order by revenue desc) = 1
-            
-            union all
-            
-            select
-                title
-                , revenue
-                , domestic_rev
-                , foreign_rev
-            from read_csv_auto('assets/manual_adds.csv')
+                , strptime(filename[44:51], '{S3_DATE_FORMAT}') as loaded_date
+            from all_data
+            qualify row_number() over (partition by title order by loaded_date desc) = 1
         )"""
     )
     row_count = "select count(*) from s3_dump"
