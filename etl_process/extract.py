@@ -76,6 +76,16 @@ def extract() -> None:
                 , strptime(filename[44:51], '{S3_DATE_FORMAT}') as loaded_date
             from all_data
             qualify row_number() over (partition by title order by loaded_date desc) = 1
+            
+            union all
+            
+            select
+                title
+                , revenue
+                , domestic_rev
+                , foreign_rev
+                , current_date as loaded_date
+            from read_csv_auto('assets/manual_adds.csv')
         )"""
     )
     row_count = "select count(*) from s3_dump"
