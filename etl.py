@@ -8,7 +8,7 @@ from utils.logging_config import setup_logging
 
 setup_logging()
 
-stub = modal.Stub("box-office-tracking")
+app = modal.App("box-office-tracking")
 logger = logging.getLogger(__name__)
 
 modal_image = modal.Image.debian_slim(python_version="3.10").run_commands(
@@ -23,7 +23,7 @@ modal_image = modal.Image.debian_slim(python_version="3.10").run_commands(
 )
 
 
-@stub.function(
+@app.function(
     image=modal_image,
     schedule=modal.Cron("0 4 * * *"),
     secrets=[modal.Secret.from_name("box-office-tracking-secrets")],
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if args.deploy:
         logger.info("Deploying etl to Modal.")
-        modal.runner.deploy_stub(stub)
+        modal.runner.deploy_app(app)
     else:
         logger.info("Running ETL locally.")
         etl.local()
