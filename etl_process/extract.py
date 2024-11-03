@@ -68,14 +68,28 @@ def extract() -> None:
                     *
                 from read_parquet('s3://box-office-tracking/boxofficemojo_ytd_*', filename=true)
             )
+            
+            , parsed_data as (
+                select
+                    "Release Group" as title
+                    , replace("Worldwide"[2:], ',', '')::int as revenue
+                    , coalesce(try_cast(replace("Domestic"[2:], ',', '') as integer), 0) as domestic_rev
+                    , coalesce(try_cast(replace("Foreign"[2:], ',', '') as integer), 0) as foreign_rev
+                    , strptime(filename[44:51], '{S3_DATE_FORMAT}') as loaded_date
+                    , date_part('year', loaded_date) as year
+                from all_data
+                qualify row_number() over (partition by title, year order by loaded_date desc) = 1
+            )
+            
             select
-                "Release Group" as title
-                , replace("Worldwide"[2:], ',', '')::int as revenue
-                , coalesce(try_cast(replace("Domestic"[2:], ',', '') as integer), 0) as domestic_rev
-                , coalesce(try_cast(replace("Foreign"[2:], ',', '') as integer), 0) as foreign_rev
-                , strptime(filename[44:51], '{S3_DATE_FORMAT}') as loaded_date
-            from all_data
-            qualify row_number() over (partition by title order by loaded_date desc) = 1
+                title
+                , sum(revenue) as revenue
+                , sum(domestic_rev) as domestic_rev
+                , sum(foreign_rev) as foreign_rev
+                , max(loaded_date) as loaded_date
+            from parsed_data
+            group by
+                1
             
             union all
             
