@@ -69,49 +69,14 @@ def extract() -> None:
                 from read_parquet('s3://box-office-tracking/boxofficemojo_ytd_*', filename=true)
             )
             
-            , parsed_data as (
-                select
-                    "Release Group" as title
-                    , replace("Worldwide"[2:], ',', '')::int as revenue
-                    , coalesce(try_cast(replace("Domestic"[2:], ',', '') as integer), 0) as domestic_rev
-                    , coalesce(try_cast(replace("Foreign"[2:], ',', '') as integer), 0) as foreign_rev
-                    , strptime(filename[44:51], '{S3_DATE_FORMAT}') as loaded_date
-                    , date_part('year', loaded_date) as year
-                    , min(loaded_date) over (partition by title) as first_seen_date
-                from all_data
-                qualify row_number() over (partition by title, year order by loaded_date desc) = 1
-            )
-            
-            , final as (
-                select
-                    title
-                    , sum(revenue) as revenue
-                    , sum(domestic_rev) as domestic_rev
-                    , sum(foreign_rev) as foreign_rev
-                    , min(first_seen_date) as first_seen_date
-                from parsed_data
-                group by
-                    1
-                
-                union all
-                
-                select
-                    title
-                    , revenue
-                    , domestic_rev
-                    , foreign_rev
-                    , release_date as first_seen_date
-                from read_csv_auto('assets/manual_adds.csv')
-            )
-            
             select
-                title
-                , revenue
-                , domestic_rev
-                , foreign_rev
-                , first_seen_date
-            from final
-            qualify row_number() over (partition by title order by revenue desc) = 1
+                "Release Group" as title
+                , replace("Worldwide"[2:], ',', '')::int as revenue
+                , coalesce(try_cast(replace("Domestic"[2:], ',', '') as integer), 0) as domestic_rev
+                , coalesce(try_cast(replace("Foreign"[2:], ',', '') as integer), 0) as foreign_rev
+                , strptime(filename[44:51], '{S3_DATE_FORMAT}') as loaded_date
+                , date_part('year', loaded_date) as year
+            from all_data
         )"""
     )
     row_count = "select count(*) from s3_dump"

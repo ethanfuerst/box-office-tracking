@@ -1,12 +1,47 @@
 create table base_query as (
-    with base_table as (
+    with parsed_data as (
+        select
+            title
+            , revenue
+            , domestic_rev
+            , foreign_rev
+            , loaded_date
+            , min(loaded_date) over (partition by title) as first_seen_date
+        from s3_dump
+        qualify row_number() over (partition by title, year order by loaded_date desc) = 1
+    )
+
+    , with_manual_adds as (
+        select
+            title
+            , sum(revenue) as revenue
+            , sum(domestic_rev) as domestic_rev
+            , sum(foreign_rev) as foreign_rev
+            , min(first_seen_date) as first_seen_date
+        from parsed_data
+        group by
+            1
+        
+        union all
+        
+        select
+            title
+            , revenue
+            , domestic_rev
+            , foreign_rev
+            , release_date as first_seen_date
+        from read_csv_auto('assets/manual_adds.csv')
+    )
+
+    , base_table as (
         select
             title
             , revenue
             , domestic_rev
             , foreign_rev
             , first_seen_date
-        from s3_dump
+        from with_manual_adds
+        qualify row_number() over (partition by title order by revenue desc) = 1
     )
 
     , drafter as (
