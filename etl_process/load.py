@@ -76,7 +76,7 @@ def load() -> None:
             "Drafted By",
             "Overall Pick",
             "Number of Better Picks",
-            "Max Better Pick Revenue",
+            "Missed Revenue",
         ],
     )
 
