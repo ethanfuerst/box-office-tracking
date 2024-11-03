@@ -5,6 +5,7 @@ create table base_query as (
             , revenue
             , domestic_rev
             , foreign_rev
+            , first_seen_date
         from s3_dump
     )
 
@@ -30,6 +31,7 @@ create table base_query as (
             , base_table.foreign_rev
             , round(base_table.domestic_rev / base_table.revenue, 4) as domestic_pct
             , round(base_table.foreign_rev / base_table.revenue, 4) as foreign_pct
+            , base_table.first_seen_date
         from base_table
         inner join drafter
             on base_table.title = drafter.movie
@@ -87,6 +89,7 @@ create table base_query as (
         , full_data.foreign_pct
         , coalesce(better_pick_final.better_pick_title, '') as better_pick_title
         , coalesce(better_pick_final.better_pick_scored_revenue, 0) as better_pick_scored_revenue
+        , strftime(full_data.first_seen_date, '%m/%d/%Y') as first_seen_date
     from full_data
     left join better_pick_final
         on full_data.overall_pick = better_pick_final.overall_pick

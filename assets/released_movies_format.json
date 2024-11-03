@@ -62,5 +62,9 @@
             "type": "CURRENCY",
             "pattern": "$#,##0"
         }
+    },
+    "W5:W": {
+        "_comment": "First Seen Date",
+        "horizontalAlignment": "RIGHT"
     }
 }

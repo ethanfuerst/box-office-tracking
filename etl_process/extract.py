@@ -77,6 +77,7 @@ def extract() -> None:
                     , coalesce(try_cast(replace("Foreign"[2:], ',', '') as integer), 0) as foreign_rev
                     , strptime(filename[44:51], '{S3_DATE_FORMAT}') as loaded_date
                     , date_part('year', loaded_date) as year
+                    , min(loaded_date) over (partition by title) as first_seen_date
                 from all_data
                 qualify row_number() over (partition by title, year order by loaded_date desc) = 1
             )
@@ -87,7 +88,7 @@ def extract() -> None:
                     , sum(revenue) as revenue
                     , sum(domestic_rev) as domestic_rev
                     , sum(foreign_rev) as foreign_rev
-                    , max(loaded_date) as loaded_date
+                    , min(first_seen_date) as first_seen_date
                 from parsed_data
                 group by
                     1
@@ -99,7 +100,7 @@ def extract() -> None:
                     , revenue
                     , domestic_rev
                     , foreign_rev
-                    , current_date as loaded_date
+                    , release_date as first_seen_date
                 from read_csv_auto('assets/manual_adds.csv')
             )
             
@@ -108,7 +109,7 @@ def extract() -> None:
                 , revenue
                 , domestic_rev
                 , foreign_rev
-                , loaded_date
+                , first_seen_date
             from final
             qualify row_number() over (partition by title order by revenue desc) = 1
         )"""

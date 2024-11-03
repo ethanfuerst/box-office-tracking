@@ -3,6 +3,7 @@ import json
 import pandas as pd
 import datetime
 import logging
+import time
 import gspread
 import gspread_formatting as gsf
 from utils.db_connection import DuckDBConnection
@@ -36,6 +37,7 @@ def load() -> None:
             "Foreign Revenue %",
             "Better Pick",
             "Better Pick Scored Revenue",
+            "First Seen Date",
         ],
     )
 
@@ -113,7 +115,7 @@ def load() -> None:
     # 3 rows for title, 1 row for column titles, 1 row for footer
     sheet_height = len(released_movies_df) + 5
     worksheet = sh.add_worksheet(
-        title=worksheet_title, rows=sheet_height, cols=23, index=1
+        title=worksheet_title, rows=sheet_height, cols=24, index=1
     )
 
     # Adding each dashboard element
@@ -143,7 +145,7 @@ def load() -> None:
 
     # Columns are created with 12 point font, then auto resized and reduced to 10 point bold font
     worksheet.columns_auto_resize(1, 7)
-    worksheet.columns_auto_resize(8, 22)
+    worksheet.columns_auto_resize(8, 23)
 
     worksheet.format(
         "B4:G4",
@@ -167,7 +169,7 @@ def load() -> None:
             },
         )
     worksheet.format(
-        "I4:V4",
+        "I4:W4",
         {
             "horizontalAlignment": "CENTER",
             "textFormat": {
@@ -182,9 +184,11 @@ def load() -> None:
             worksheet.update(values=[[""]], range_name=f"V{i}")
 
     # resizing spacer columns
-    spacer_columns = ["A", "H", "W"]
+    spacer_columns = ["A", "H", "X"]
     for column in spacer_columns:
         gsf.set_column_width(worksheet, column, 25)
+
+    time.sleep(60)
 
     # for some reason the auto resize still cuts off some of the title
     title_columns = ["J", "U"]
@@ -202,6 +206,7 @@ def load() -> None:
 
     # gets resized wrong and have to do it manually
     gsf.set_column_width(worksheet, "R", 142)
+    gsf.set_column_width(worksheet, "W", 104)
 
     # Adding titles
     worksheet.update(values=[["Fantasy Box Office Standings"]], range_name="B2")
@@ -215,7 +220,7 @@ def load() -> None:
         "I2",
         {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
     )
-    worksheet.merge_cells("I2:V2")
+    worksheet.merge_cells("I2:W2")
 
     if add_worst_picks:
         worksheet.update(values=[["Worst Picks"]], range_name="B11")
