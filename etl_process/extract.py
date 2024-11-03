@@ -81,25 +81,36 @@ def extract() -> None:
                 qualify row_number() over (partition by title, year order by loaded_date desc) = 1
             )
             
-            select
-                title
-                , sum(revenue) as revenue
-                , sum(domestic_rev) as domestic_rev
-                , sum(foreign_rev) as foreign_rev
-                , max(loaded_date) as loaded_date
-            from parsed_data
-            group by
-                1
-            
-            union all
+            , final as (
+                select
+                    title
+                    , sum(revenue) as revenue
+                    , sum(domestic_rev) as domestic_rev
+                    , sum(foreign_rev) as foreign_rev
+                    , max(loaded_date) as loaded_date
+                from parsed_data
+                group by
+                    1
+                
+                union all
+                
+                select
+                    title
+                    , revenue
+                    , domestic_rev
+                    , foreign_rev
+                    , current_date as loaded_date
+                from read_csv_auto('assets/manual_adds.csv')
+            )
             
             select
                 title
                 , revenue
                 , domestic_rev
                 , foreign_rev
-                , current_date as loaded_date
-            from read_csv_auto('assets/manual_adds.csv')
+                , loaded_date
+            from final
+            qualify row_number() over (partition by title order by revenue desc) = 1
         )"""
     )
     row_count = "select count(*) from s3_dump"

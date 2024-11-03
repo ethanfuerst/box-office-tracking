@@ -15,7 +15,7 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 
-def load():
+def load() -> None:
     duckdb_con = DuckDBConnection()
 
     released_movies_df = temp_table_to_df(
@@ -39,20 +39,22 @@ def load():
         ],
     )
 
-    dashboard_elements = (
+    scoreboard_df = temp_table_to_df(
+        "scoreboard",
+        duckdb_con,
+        columns=[
+            "Name",
+            "Scored Revenue",
+            "# Released",
+            "# Optimal Picks",
+            "% Optimal Picks",
+            "Unadjusted Revenue",
+        ],
+    )
+
+    dashboard_elements = [
         (
-            temp_table_to_df(
-                "scoreboard",
-                duckdb_con,
-                columns=[
-                    "Name",
-                    "Scored Revenue",
-                    "# Released",
-                    "# Optimal Picks",
-                    "% Optimal Picks",
-                    "Unadjusted Revenue",
-                ],
-            ),
+            scoreboard_df,
             "B4",
             load_format_config("assets/scoreboard_format.json"),
         ),
@@ -61,7 +63,37 @@ def load():
             "I4",
             load_format_config("assets/released_movies_format.json"),
         ),
+    ]
+
+    worst_picks_df = temp_table_to_df(
+        "worst_picks",
+        duckdb_con,
+        columns=[
+            "Rank",
+            "Title",
+            "Drafted By",
+            "Overall Pick",
+            "Number of Better Picks",
+            "Max Better Pick Revenue",
+        ],
     )
+
+    add_worst_picks = (
+        len(released_movies_df) > len(scoreboard_df) + 3 and len(worst_picks_df) > 1
+    )
+
+    if add_worst_picks:
+        worst_picks_df_height = len(released_movies_df) - len(scoreboard_df) - 3
+
+        worst_picks_df = worst_picks_df.head(worst_picks_df_height)
+
+        dashboard_elements.append(
+            (
+                worst_picks_df,
+                "B12",
+                load_format_config("assets/worst_picks_format.json"),
+            )
+        )
 
     gspread_credentials = os.getenv("GSPREAD_CREDENTIALS")
     if gspread_credentials is not None:
@@ -123,6 +155,17 @@ def load():
             },
         },
     )
+    if add_worst_picks:
+        worksheet.format(
+            "B12:G12",
+            {
+                "horizontalAlignment": "CENTER",
+                "textFormat": {
+                    "fontSize": 10,
+                    "bold": True,
+                },
+            },
+        )
     worksheet.format(
         "I4:V4",
         {
@@ -145,6 +188,10 @@ def load():
 
     # for some reason the auto resize still cuts off some of the title
     title_columns = ["J", "U"]
+
+    if add_worst_picks:
+        title_columns.append("C")
+
     for column in title_columns:
         gsf.set_column_width(worksheet, column, 256)
 
@@ -169,6 +216,14 @@ def load():
         {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
     )
     worksheet.merge_cells("I2:V2")
+
+    if add_worst_picks:
+        worksheet.update(values=[["Worst Picks"]], range_name="B11")
+        worksheet.format(
+            "B11",
+            {"horizontalAlignment": "CENTER", "textFormat": {"bold": True}},
+        )
+        worksheet.merge_cells("B11:G11")
 
     logger.info("Dashboard updated and formatted")
     duckdb_con.close()
