@@ -66,5 +66,9 @@
     "W5:W": {
         "_comment": "First Seen Date",
         "horizontalAlignment": "RIGHT"
+    },
+    "X5:X": {
+        "_comment": "Still In Theaters",
+        "horizontalAlignment": "CENTER"
     }
 }

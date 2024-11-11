@@ -38,6 +38,7 @@ def load() -> None:
             "Better Pick",
             "Better Pick Scored Revenue",
             "First Seen Date",
+            "Still In Theaters",
         ],
     )
 
@@ -79,6 +80,7 @@ def load() -> None:
             "Missed Revenue",
         ],
     )
+    duckdb_con.close()
 
     add_worst_picks = (
         len(released_movies_df) > len(scoreboard_df) + 3 and len(worst_picks_df) > 1
@@ -115,7 +117,7 @@ def load() -> None:
     # 3 rows for title, 1 row for column titles, 1 row for footer
     sheet_height = len(released_movies_df) + 5
     worksheet = sh.add_worksheet(
-        title=worksheet_title, rows=sheet_height, cols=24, index=1
+        title=worksheet_title, rows=sheet_height, cols=25, index=1
     )
 
     # Adding each dashboard element
@@ -169,7 +171,7 @@ def load() -> None:
             },
         )
     worksheet.format(
-        "I4:W4",
+        "I4:X4",
         {
             "horizontalAlignment": "CENTER",
             "textFormat": {
@@ -184,7 +186,7 @@ def load() -> None:
             worksheet.update(values=[[""]], range_name=f"V{i}")
 
     # resizing spacer columns
-    spacer_columns = ["A", "H", "X"]
+    spacer_columns = ["A", "H", "Y"]
     for column in spacer_columns:
         gsf.set_column_width(worksheet, column, 25)
 
@@ -207,6 +209,7 @@ def load() -> None:
     # gets resized wrong and have to do it manually
     gsf.set_column_width(worksheet, "R", 142)
     gsf.set_column_width(worksheet, "W", 104)
+    gsf.set_column_width(worksheet, "X", 106)
 
     # Adding titles
     worksheet.update(values=[["Fantasy Box Office Standings"]], range_name="B2")
@@ -220,7 +223,7 @@ def load() -> None:
         "I2",
         {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
     )
-    worksheet.merge_cells("I2:W2")
+    worksheet.merge_cells("I2:X2")
 
     if add_worst_picks:
         worksheet.update(values=[["Worst Picks"]], range_name="B11")
@@ -230,5 +233,18 @@ def load() -> None:
         )
         worksheet.merge_cells("B11:G11")
 
+    still_in_theater_rule = gsf.ConditionalFormatRule(
+        ranges=[gsf.GridRange.from_a1_range("X5:X", worksheet)],
+        booleanRule=gsf.BooleanRule(
+            condition=gsf.BooleanCondition("TEXT_EQ", ["Yes"]),
+            format=gsf.CellFormat(
+                backgroundColor=gsf.Color(0, 0.9, 0),
+            ),
+        ),
+    )
+
+    rules = gsf.get_conditional_format_rules(worksheet)
+    rules.append(still_in_theater_rule)
+    rules.save()
+
     logger.info("Dashboard updated and formatted")
-    duckdb_con.close()

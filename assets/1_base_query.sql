@@ -11,6 +11,30 @@ create table base_query as (
         qualify row_number() over (partition by title, year order by loaded_date desc) = 1
     )
 
+    , currently_updating as (
+        select
+            title
+            , lead(revenue, 1) over (partition by title order by loaded_date desc) as last_day_revenue
+            , lag(revenue, 7) over (partition by title order by loaded_date desc) as revenue_7_days_ago
+            , revenue != last_day_revenue as change_in_last_day
+            , revenue != revenue_7_days_ago as change_in_last_week
+            , loaded_date as last_updated_date
+            , datediff('day', last_updated_date, today()) as days_since_last_update
+            , coalesce((change_in_last_day or change_in_last_week) and days_since_last_update <= 7, false) as still_in_theaters
+        from s3_dump
+        qualify row_number() over (partition by title order by loaded_date desc) = 1
+    )
+
+    , manual_adds as (
+        select
+            title
+            , revenue
+            , domestic_rev
+            , foreign_rev
+            , release_date as first_seen_date
+        from read_csv_auto('assets/manual_adds.csv')
+    )
+
     , with_manual_adds as (
         select
             title
@@ -29,8 +53,8 @@ create table base_query as (
             , revenue
             , domestic_rev
             , foreign_rev
-            , release_date as first_seen_date
-        from read_csv_auto('assets/manual_adds.csv')
+            , first_seen_date
+        from manual_adds
     )
 
     , base_table as (
@@ -67,9 +91,12 @@ create table base_query as (
             , round(base_table.domestic_rev / base_table.revenue, 4) as domestic_pct
             , round(base_table.foreign_rev / base_table.revenue, 4) as foreign_pct
             , base_table.first_seen_date
+            , case when base_table.title in (select title from manual_adds) then false else coalesce(currently_updating.still_in_theaters, false) end as still_in_theaters
         from base_table
         inner join drafter
             on base_table.title = drafter.movie
+        left join currently_updating
+            on base_table.title = currently_updating.title
     )
 
     , better_pick_calc as (
@@ -125,6 +152,7 @@ create table base_query as (
         , coalesce(better_pick_final.better_pick_title, '') as better_pick_title
         , coalesce(better_pick_final.better_pick_scored_revenue, 0) as better_pick_scored_revenue
         , strftime(full_data.first_seen_date, '%m/%d/%Y') as first_seen_date
+        , case when full_data.still_in_theaters then 'Yes' else 'No' end as still_in_theaters
     from full_data
     left join better_pick_final
         on full_data.overall_pick = better_pick_final.overall_pick
