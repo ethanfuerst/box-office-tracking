@@ -1,5 +1,5 @@
 create table base_query as (
-    with parsed_data as (
+    with raw_data as (
         select
             title
             , revenue
@@ -8,7 +8,19 @@ create table base_query as (
             , loaded_date
             , min(loaded_date) over (partition by title) as first_seen_date
         from s3_dump
-        qualify row_number() over (partition by title, year order by loaded_date desc) = 1
+    )
+    
+    , parsed_data as (
+        select
+            title
+            , revenue
+            , domestic_rev
+            , foreign_rev
+            , loaded_date
+            , first_seen_date
+        from raw_data
+        where year(first_seen_date) = ?
+        qualify row_number() over (partition by title, year(loaded_date) order by loaded_date desc) = 1
     )
 
     , currently_updating as (
