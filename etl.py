@@ -34,10 +34,10 @@ modal_image = modal.Image.debian_slim(python_version="3.10").run_commands(
     ),
     mounts=[modal.Mount.from_local_dir("assets/", remote_path="/root/assets")],
 )
-def etl():
+def etl(year: int = 2024):
     logger.info("Starting ETL process.")
     extract()
-    transform()
+    transform(year=year)
     load()
     logger.info("Completed ETL process.")
 
