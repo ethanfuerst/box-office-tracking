@@ -164,7 +164,7 @@ create table base_query as (
         , coalesce(better_pick_final.better_pick_title, '') as better_pick_title
         , coalesce(better_pick_final.better_pick_scored_revenue, 0) as better_pick_scored_revenue
         , strftime(full_data.first_seen_date, '%m/%d/%Y') as first_seen_date
-        , case when full_data.still_in_theaters then 'Yes' else 'No' end as still_in_theaters
+        , case when full_data.still_in_theaters or datediff('day', full_data.first_seen_date, today()) <= 7 then 'Yes' else 'No' end as still_in_theaters
     from full_data
     left join better_pick_final
         on full_data.overall_pick = better_pick_final.overall_pick
