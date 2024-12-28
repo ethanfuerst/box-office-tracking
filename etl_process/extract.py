@@ -24,7 +24,7 @@ def extract() -> None:
             
             select
                 "Release Group" as title
-                , replace("Worldwide"[2:], ',', '')::int as revenue
+                , coalesce(try_cast(replace("Worldwide"[2:], ',', '') as integer), 0) as revenue
                 , coalesce(try_cast(replace("Domestic"[2:], ',', '') as integer), 0) as domestic_rev
                 , coalesce(try_cast(replace("Foreign"[2:], ',', '') as integer), 0) as foreign_rev
                 , strptime(date_str, '{S3_DATE_FORMAT}') as loaded_date
