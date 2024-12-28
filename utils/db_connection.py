@@ -1,5 +1,6 @@
-import duckdb
 import os
+
+import duckdb
 
 
 class DuckDBConnection:

@@ -19,7 +19,7 @@ create table base_query as (
             , loaded_date
             , first_seen_date
         from raw_data
-        where year(first_seen_date) = ?
+        where year(first_seen_date) <= $year
         qualify row_number() over (partition by title, year(loaded_date) order by loaded_date desc) = 1
     )
 
@@ -40,11 +40,11 @@ create table base_query as (
     , manual_adds as (
         select
             title
-            , revenue
-            , domestic_rev
-            , foreign_rev
-            , release_date as first_seen_date
-        from read_csv_auto('assets/manual_adds.csv')
+            , try_cast(revenue as integer) as revenue
+            , try_cast(domestic_rev as integer) as domestic_rev
+            , try_cast(foreign_rev as integer) as foreign_rev
+            , try_cast(release_date as date) as first_seen_date
+        from read_csv_auto('assets/drafts/$year/manual_adds.csv')
     )
 
     , with_manual_adds as (
@@ -86,7 +86,7 @@ create table base_query as (
             , overall as overall_pick
             , name
             , movie
-        from read_csv('assets/box_office_draft.csv', auto_detect=true)
+        from read_csv('assets/drafts/$year/box_office_draft.csv', auto_detect=true)
     )
 
     , full_data as (

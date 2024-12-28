@@ -1,22 +1,23 @@
-import os
-import json
-import pandas as pd
 import datetime
-import logging
+import json
+import os
 import time
+from logging import getLogger
+
 import gspread
 import gspread_formatting as gsf
-from utils.db_connection import DuckDBConnection
-from utils.format import load_format_config
-from utils.query import query_to_str, temp_table_to_df
-from utils.gspread_format import df_to_sheet
 from dotenv import load_dotenv
 
+from utils.db_connection import DuckDBConnection
+from utils.format import load_format_config
+from utils.gspread_format import df_to_sheet
+from utils.query import temp_table_to_df
+
 load_dotenv()
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 
-def load() -> None:
+def load(year: int) -> None:
     duckdb_con = DuckDBConnection()
 
     released_movies_df = temp_table_to_df(
@@ -99,16 +100,16 @@ def load() -> None:
             )
         )
 
-    gspread_credentials = os.getenv("GSPREAD_CREDENTIALS")
+    gspread_credentials = os.getenv(f"{year}_GSPREAD_CREDENTIALS")
     if gspread_credentials is not None:
         credentials_dict = json.loads(gspread_credentials.replace("\n", "\\n"))
         gc = gspread.service_account_from_dict(credentials_dict)
     else:
         raise ValueError(
-            "GSPREAD_CREDENTIALS is not set or is invalid in the .env file."
+            f"{year}_GSPREAD_CREDENTIALS is not set or is invalid in the .env file."
         )
 
-    sh = gc.open("2024 Fantasy Box Office Draft")
+    sh = gc.open(f"{year} Fantasy Box Office Draft")
 
     worksheet_title = "Dashboard"
     worksheet = sh.worksheet(worksheet_title)

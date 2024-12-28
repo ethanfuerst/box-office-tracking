@@ -1,7 +1,7 @@
 import json
+from typing import Union, List, Dict
 
-
-def remove_comments(obj):
+def remove_comments(obj: Union[Dict, List]) -> Union[Dict, List]:
     if isinstance(obj, dict):
         return {
             k: remove_comments(v)

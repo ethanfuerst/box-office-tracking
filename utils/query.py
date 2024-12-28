@@ -1,7 +1,11 @@
-import pandas as pd
+from pandas import DataFrame
+from typing import Optional, List
+from utils.db_connection import DuckDBConnection
 
 
-def temp_table_to_df(table, db_con, columns=None) -> pd.DataFrame:
+def temp_table_to_df(
+    table: str, db_con: DuckDBConnection, columns: Optional[List[str]] = None
+) -> DataFrame:
     df = db_con.query(f"select * from {table}").df()
     if columns:
         df.columns = columns
