@@ -1,15 +1,17 @@
-import modal
-import logging
 import argparse
+from logging import getLogger
+
+import modal
+
 from etl_process.extract import extract
-from etl_process.transform import transform
 from etl_process.load import load
+from etl_process.transform import transform
 from utils.logging_config import setup_logging
 
 setup_logging()
 
 app = modal.App("box-office-tracking")
-logger = logging.getLogger(__name__)
+logger = getLogger(__name__)
 
 modal_image = modal.Image.debian_slim(python_version="3.10").run_commands(
     "pip install duckdb==0.10.0",
@@ -25,7 +27,7 @@ modal_image = modal.Image.debian_slim(python_version="3.10").run_commands(
 
 @app.function(
     image=modal_image,
-    schedule=modal.Cron("0 4 * * *"),
+    schedule=modal.Cron("0 5 * * *"),
     secrets=[modal.Secret.from_name("box-office-tracking-secrets")],
     retries=modal.Retries(
         max_retries=3,
