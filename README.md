@@ -16,5 +16,4 @@ Each year for the draft must also have an environment variable in the .env file 
 
 To Do:
 - add tests
-- get list of movies that are not in top 200 but are drafted at the end of the year and compare
  
