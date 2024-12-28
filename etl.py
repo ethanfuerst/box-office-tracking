@@ -1,4 +1,3 @@
-import argparse
 from logging import getLogger
 
 import modal
@@ -38,27 +37,17 @@ modal_image = modal.Image.debian_slim(python_version="3.10").run_commands(
 )
 def etl(years: list[int] = [2024]):
     logger.info("Starting ETL process.")
-    
+
     extract()
 
     for year in years:
         transform(year=year)
         load(year=year)
-    
+
         logger.info(f"Completed ETL process for {year}.")
+
+    logger.info("ETL process completed.")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Run the application locally or deploy to Modal."
-    )
-    parser.add_argument(
-        "--deploy", action="store_true", help="Deploy the application to Modal."
-    )
-    args = parser.parse_args()
-    if args.deploy:
-        logger.info("Deploying etl to Modal.")
-        modal.runner.deploy_app(app)
-    else:
-        logger.info("Running ETL locally.")
-        etl.local()
+    etl.local()

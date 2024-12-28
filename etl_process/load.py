@@ -135,7 +135,7 @@ def load(year: int) -> None:
     worksheet.update(
         values=[
             [
-                f"Last Updated UTC\n{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+                f'Last Updated UTC\n{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
             ]
         ],
         range_name="G2",
@@ -201,7 +201,7 @@ def load(year: int) -> None:
         title_columns.append("C")
 
     for column in title_columns:
-        gsf.set_column_width(worksheet, column, 256)
+        gsf.set_column_width(worksheet, column, 284)
 
     # revenue columns will also get cut off
     revenue_columns = ["L", "M", "R", "S"]

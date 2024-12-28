@@ -1,5 +1,7 @@
+from typing import List, Optional
+
 from pandas import DataFrame
-from typing import Optional, List
+
 from utils.db_connection import DuckDBConnection
 
 
