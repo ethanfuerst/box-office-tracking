@@ -1,7 +1,6 @@
 import datetime
 import json
 import os
-import time
 from logging import getLogger
 
 import gspread
@@ -122,6 +121,7 @@ def load(year: int) -> None:
     worksheet = sh.add_worksheet(
         title=worksheet_title, rows=sheet_height, cols=25, index=1
     )
+    worksheet = sh.worksheet(worksheet_title)
 
     # Adding each dashboard element
     for element in dashboard_elements:
@@ -131,7 +131,6 @@ def load(year: int) -> None:
             location=element[1],
             format_dict=element[2] if len(element) > 2 else None,
         )
-        time.sleep(60)  # I need to figure out rate limiting
 
     # Adding last updated header
     worksheet.update(
@@ -193,8 +192,6 @@ def load(year: int) -> None:
     spacer_columns = ["A", "H", "Y"]
     for column in spacer_columns:
         gsf.set_column_width(worksheet, column, 25)
-
-    time.sleep(60)  # I need to figure out rate limiting
 
     # for some reason the auto resize still cuts off some of the title
     title_columns = ["J", "U"]
