@@ -12,7 +12,7 @@ Each year must have a corresponding folder in assets/ with the following files:
   - This file must have at least 1 row, which can be an empty row if there are no manual adds.
   - Columns: title, revenue, domestic_rev, foreign_rev, release_date
 
-Each year for the draft must also have an environment variable in the .env file with the name **year**_GSPREAD_CREDENTIALS. This contains the credentials for the google sheet that data will be written to for that year. [Here](https://docs.gspread.org/en/latest/oauth2.html#for-bots-using-service-account) is how to generate these credentials.
+Each year for the draft must also have an environment variable in the .env file with the name GSPREAD_CREDENTIALS_**year**. This contains the credentials for the google sheet that data will be written to for that year. [Here](https://docs.gspread.org/en/latest/oauth2.html#for-bots-using-service-account) is how to generate these credentials.
 
 To Do:
 - add tests

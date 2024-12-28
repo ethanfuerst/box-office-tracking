@@ -100,13 +100,14 @@ def load(year: int) -> None:
             )
         )
 
-    gspread_credentials = os.getenv(f"{year}_GSPREAD_CREDENTIALS")
+    gspread_credentials_key = f"GSPREAD_CREDENTIALS_{year}"
+    gspread_credentials = os.getenv(gspread_credentials_key)
     if gspread_credentials is not None:
         credentials_dict = json.loads(gspread_credentials.replace("\n", "\\n"))
         gc = gspread.service_account_from_dict(credentials_dict)
     else:
         raise ValueError(
-            f"{year}_GSPREAD_CREDENTIALS is not set or is invalid in the .env file."
+            f"{gspread_credentials_key} is not set or is invalid in the .env file."
         )
 
     sh = gc.open(f"{year} Fantasy Box Office Draft")
