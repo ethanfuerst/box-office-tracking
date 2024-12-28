@@ -94,14 +94,14 @@ create table base_query as (
             base_table.title
             , drafter.name as drafted_by
             , drafter.overall_pick
-            , base_table.revenue
+            , coalesce(base_table.revenue, 0) as revenue
             , drafter.round
             , case when drafter.round > 13 then 5 else 1 end as multiplier
-            , multiplier * base_table.revenue as scored_revenue
-            , base_table.domestic_rev
-            , base_table.foreign_rev
-            , round(base_table.domestic_rev / base_table.revenue, 4) as domestic_pct
-            , round(base_table.foreign_rev / base_table.revenue, 4) as foreign_pct
+            , coalesce(multiplier * base_table.revenue, 0) as scored_revenue
+            , coalesce(base_table.domestic_rev, 0) as domestic_rev
+            , coalesce(base_table.foreign_rev, 0) as foreign_rev
+            , coalesce(round(base_table.domestic_rev / base_table.revenue, 4), 0) as domestic_pct
+            , coalesce(round(base_table.foreign_rev / base_table.revenue, 4), 0) as foreign_pct
             , base_table.first_seen_date
             , case when base_table.title in (select title from manual_adds) then false else coalesce(currently_updating.still_in_theaters, false) end as still_in_theaters
         from base_table
@@ -129,6 +129,9 @@ create table base_query as (
         left join full_data as better_picks
             on picks.revenue < better_picks.revenue
             and picks.overall_pick < better_picks.overall_pick
+        where 
+            better_picks.revenue > 0
+            and better_picks.scored_revenue > 0
         group by
             picks.round
             , picks.overall_pick
@@ -149,7 +152,7 @@ create table base_query as (
     )
 
     select
-        row_number() over (order by full_data.scored_revenue desc) as rank
+        row_number() over (order by full_data.scored_revenue desc, full_data.title asc) as rank
         , full_data.title
         , full_data.drafted_by
         , full_data.revenue

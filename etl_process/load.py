@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import time
+import pandas as pd
 from logging import getLogger
 
 import gspread
@@ -130,6 +131,7 @@ def load(year: int) -> None:
             location=element[1],
             format_dict=element[2] if len(element) > 2 else None,
         )
+        time.sleep(60) # I need to figure out rate limiting
 
     # Adding last updated header
     worksheet.update(
@@ -192,7 +194,7 @@ def load(year: int) -> None:
     for column in spacer_columns:
         gsf.set_column_width(worksheet, column, 25)
 
-    time.sleep(60)
+    time.sleep(60) # I need to figure out rate limiting
 
     # for some reason the auto resize still cuts off some of the title
     title_columns = ["J", "U"]
@@ -250,3 +252,14 @@ def load(year: int) -> None:
     rules.save()
 
     logger.info("Dashboard updated and formatted")
+
+    draft_df = pd.read_csv(f'assets/drafts/{year}/box_office_draft.csv')
+    released_movies = released_movies_df['Title'].tolist()
+    drafted_movies = draft_df['movie'].tolist()
+    movies_missing_from_scoreboard = list(set(drafted_movies) - set(released_movies))
+    
+    if movies_missing_from_scoreboard:
+        logger.info('Movies missing from scoreboard:')
+        logger.info(', '.join(sorted(movies_missing_from_scoreboard)))
+    else:
+        logger.info('All movies are on the scoreboard.')
