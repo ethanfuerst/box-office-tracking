@@ -15,5 +15,5 @@ Each year must have a corresponding folder in assets/ with the following files:
 Each year for the draft must also have an environment variable in the .env file with the name GSPREAD_CREDENTIALS_**year**. This contains the credentials for the google sheet that data will be written to for that year. [Here](https://docs.gspread.org/en/latest/oauth2.html#for-bots-using-service-account) is how to generate these credentials.
 
 To Do:
+- add in a check after loading to get the movies that have a lower revenue than the lowest revenue in the most recent top 200
 - add tests
- 

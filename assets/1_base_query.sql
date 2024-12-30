@@ -9,7 +9,7 @@ create table base_query as (
             , min(loaded_date) over (partition by title) as first_seen_date
         from s3_dump
     )
-    
+
     , parsed_data as (
         select
             title
@@ -55,11 +55,12 @@ create table base_query as (
             , sum(foreign_rev) as foreign_rev
             , min(first_seen_date) as first_seen_date
         from parsed_data
+        where title not in (select title from manual_adds)
         group by
             1
-        
+
         union all
-        
+
         select
             title
             , revenue
@@ -129,7 +130,7 @@ create table base_query as (
         left join full_data as better_picks
             on picks.revenue < better_picks.revenue
             and picks.overall_pick < better_picks.overall_pick
-        where 
+        where
             better_picks.revenue > 0
             and better_picks.scored_revenue > 0
         group by
