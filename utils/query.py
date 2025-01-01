@@ -12,6 +12,7 @@ def temp_table_to_df(
     if columns:
         df.columns = columns
 
+    df = df.replace([float('inf'), float('-inf'), float('nan')], None)
     return df
 
 
