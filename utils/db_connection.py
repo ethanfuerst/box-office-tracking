@@ -1,6 +1,9 @@
 import os
 
 import duckdb
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class DuckDBConnection:
