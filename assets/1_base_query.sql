@@ -20,7 +20,7 @@ create table base_query as (
             , first_seen_date
         from raw_data
         where year(first_seen_date) <= $year
-        qualify row_number() over (partition by title, year(loaded_date) order by loaded_date desc) = 1
+        qualify row_number() over (partition by title order by loaded_date desc) = 1
     )
 
     , currently_updating as (
