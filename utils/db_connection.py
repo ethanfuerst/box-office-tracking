@@ -24,17 +24,16 @@ class DuckDBConnection:
         s3_secret_access_key = os.getenv("S3_SECRET_ACCESS_KEY")
 
         conn.execute(
-            """
+            f"""
             install httpfs;
             load httpfs;
-            """
-        )
-        conn.execute(
-            f"""
-            set s3_endpoint='nyc3.digitaloceanspaces.com';
-            set s3_region='nyc3';
-            set s3_access_key_id='{s3_access_key_id}';
-            set s3_secret_access_key='{s3_secret_access_key}';
+            CREATE SECRET (
+                TYPE S3,
+                KEY_ID '{s3_access_key_id}',
+                SECRET '{s3_secret_access_key}',
+                REGION 'nyc3',
+                ENDPOINT 'nyc3.digitaloceanspaces.com'
+            );
             """
         )
 
