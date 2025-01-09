@@ -19,6 +19,7 @@ REQUIRED_ENV_VARS = [
     'GSPREAD_CREDENTIALS_{year}',
     'MODAL_TOKEN_ID',
     'MODAL_TOKEN_SECRET',
+    'BUCKET',
 ]
 
 

@@ -1,3 +1,4 @@
+import os
 from logging import getLogger
 
 from utils.db_connection import DuckDBConnection
@@ -11,6 +12,8 @@ logger = getLogger(__name__)
 def extract() -> None:
     duckdb_con = DuckDBConnection()
 
+    bucket = os.getenv('BUCKET')
+
     duckdb_con.execute(
         f"""
         create temp table s3_dump as (
@@ -19,9 +22,9 @@ def extract() -> None:
                     *
                     , split_part(split_part(filename, '_', -1), '.', -2) as date_str
                     , split_part(filename, '_', -2) as year_part
-                from read_parquet('s3://box-office-tracking/boxofficemojo_*', filename=true)
+                from read_parquet('s3://{bucket}/boxofficemojo_*.parquet', filename=true)
             )
-            
+
             select
                 "Release Group" as title
                 , coalesce(try_cast(replace("Worldwide"[2:], ',', '') as integer), 0) as revenue
