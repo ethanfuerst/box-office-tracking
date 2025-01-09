@@ -46,18 +46,19 @@ def etl(years: list[int] = DEFAULT_YEARS, dry_run: bool = False):
             )
 
     if valid_years:
+        valid_years_str = ', '.join(map(str, valid_years))
         extract()
 
-        logger.info(f'Transforming data for years: {valid_years}.')
+        logger.info(f'Transforming data for years: {valid_years_str}.')
         for year in valid_years:
             transform(year=year)
 
         if not dry_run:
-            logger.info(f'Loading data for years: {valid_years}.')
+            logger.info(f'Loading data for years: {valid_years_str}.')
             for year in valid_years:
                 load(year=year)
 
-        logger.info(f'Completed ETL process for years: {valid_years}.')
+        logger.info(f'Completed ETL process for years: {valid_years_str}.')
     else:
         logger.info('No valid years found. Skipping ETL process.')
 
