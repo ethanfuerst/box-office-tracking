@@ -1,6 +1,8 @@
 import os
 from logging import getLogger
 
+import pandas as pd
+
 from utils.logging_config import setup_logging
 
 setup_logging()
@@ -34,5 +36,12 @@ def config_files_exist(year: int) -> bool:
         if not os.path.exists(config_file_path):
             logger.warning(f'{config_file_path} does not exist.')
             return False
+
+    box_office_draft_path = f'assets/drafts/{year}/box_office_draft.csv'
+
+    box_office_draft_df = pd.read_csv(box_office_draft_path)
+    if box_office_draft_df.empty:
+        logger.warning(f'{box_office_draft_path} does not contain any rows.')
+        return False
 
     return True
