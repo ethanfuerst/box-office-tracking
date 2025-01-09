@@ -15,7 +15,7 @@ Each year must have the following:
 - a google sheet named "**year** Fantasy Box Office Draft" with a tab called "Dashboard"
 - an s3 bucket with the following files:
   - boxofficemojo_YYYYMMDD.parquet
-    - Contains the box office data for the year scraped from boxofficemojo.com on YYYYMMDD with the following columns:
+    - Contains the box office data for the year scraped from [Box Office Mojo](https://www.boxofficemojo.com/year/world/) on YYYYMMDD with the following columns:
       - "Release Group"
       - "Worldwide"
       - "Domestic"
