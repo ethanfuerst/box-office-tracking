@@ -38,11 +38,10 @@ def config_files_exist(year: int) -> bool:
             logger.warning(f'{config_file_path} does not exist.')
             return False
 
-    box_office_draft_path = f'assets/drafts/{year}/box_office_draft.csv'
-
-    box_office_draft_df = pd.read_csv(box_office_draft_path)
-    if box_office_draft_df.empty:
-        logger.warning(f'{box_office_draft_path} does not contain any rows.')
-        return False
+        if 'box_office_draft.csv' in config_file:
+            box_office_draft_df = pd.read_csv(config_file_path)
+            if box_office_draft_df.empty:
+                logger.warning(f'{config_file_path} does not contain any rows.')
+                return False
 
     return True
