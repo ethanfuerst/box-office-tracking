@@ -1,3 +1,4 @@
+import argparse
 from logging import getLogger
 
 import modal
@@ -5,6 +6,8 @@ import modal
 from etl_process.extract import extract
 from etl_process.load import load
 from etl_process.transform import transform
+from utils.check_config_files import config_files_exist
+from utils.db_connection import DuckDBConnection
 from utils.logging_config import setup_logging
 
 setup_logging()
@@ -15,6 +18,8 @@ logger = getLogger(__name__)
 modal_image = modal.Image.debian_slim(python_version='3.10').poetry_install_from_file(
     poetry_pyproject_toml='pyproject.toml'
 )
+
+DEFAULT_YEARS = [2024, 2025]
 
 
 @app.function(
@@ -28,19 +33,63 @@ modal_image = modal.Image.debian_slim(python_version='3.10').poetry_install_from
     ),
     mounts=[modal.Mount.from_local_dir('assets/', remote_path='/root/assets')],
 )
-def etl(years: list[int] = [2024]):
+def etl(years: list[int] = DEFAULT_YEARS, dry_run: bool = False):
     logger.info('Starting ETL process.')
 
-    extract()
-
+    valid_years = []
     for year in years:
-        transform(year=year)
-        load(year=year)
+        if config_files_exist(year):
+            valid_years.append(year)
+        else:
+            logger.warning(
+                f'Config files for {year} do not exist. Skipping ETL process for {year}.'
+            )
 
-        logger.info(f'Completed ETL process for {year}.')
+    if valid_years:
+        valid_years = sorted(valid_years)
+        valid_years_str = ', '.join(map(str, valid_years))
 
-    logger.info('ETL process completed.')
+        extract()
+
+        logger.info(f'Transforming data for years: {valid_years_str}.')
+        for year in valid_years:
+            transform(year=year)
+
+        if not dry_run:
+            logger.info(f'Loading data for years: {valid_years_str}.')
+            for year in valid_years:
+                load(year=year)
+
+        logger.info(f'Completed ETL process for years: {valid_years_str}.')
+    else:
+        logger.info('No valid years found. Skipping ETL process.')
+
+    DuckDBConnection().close()
 
 
 if __name__ == '__main__':
-    etl.local()
+    parser = argparse.ArgumentParser(
+        description='Run specific functions of the chrono app.'
+    )
+    parser.add_argument(
+        '--years',
+        nargs='+',
+        type=int,
+        default=DEFAULT_YEARS,
+        help='Years to process',
+    )
+    parser.add_argument(
+        '--dry-run',
+        action='store_true',
+        help='Run the E and T steps only, skipping the L to load the data in a google sheet.',
+    )
+    args = parser.parse_args()
+
+    years = args.years
+    dry_run = args.dry_run
+
+    logger.info(
+        f'Running ETL locally with years: {", ".join(map(str, years))} and dry_run: {dry_run}'
+    )
+    etl.local(years=years, dry_run=dry_run)
+    logger.info('ETL process completed.')

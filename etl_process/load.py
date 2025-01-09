@@ -81,7 +81,6 @@ def load(year: int) -> None:
             "Missed Revenue",
         ],
     )
-    duckdb_con.close()
 
     add_worst_picks = (
         len(released_movies_df) > len(scoreboard_df) + 3 and len(worst_picks_df) > 1
