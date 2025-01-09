@@ -36,23 +36,30 @@ DEFAULT_YEARS = [2024]
 def etl(years: list[int] = DEFAULT_YEARS, dry_run: bool = False):
     logger.info('Starting ETL process.')
 
-    extract()
-
+    valid_years = []
     for year in years:
-        if not config_files_exist(year):
+        if config_files_exist(year):
+            valid_years.append(year)
+        else:
             logger.warning(
                 f'Config files for {year} do not exist. Skipping ETL process for {year}.'
             )
-            continue
 
-        logger.info(f'Transforming data for {year}.')
-        transform(year=year)
+    if valid_years:
+        extract()
+
+        logger.info(f'Transforming data for years: {valid_years}.')
+        for year in valid_years:
+            transform(year=year)
 
         if not dry_run:
-            logger.info(f'Loading data for {year}.')
-            load(year=year)
+            logger.info(f'Loading data for years: {valid_years}.')
+            for year in valid_years:
+                load(year=year)
 
-        logger.info(f'Completed ETL process for {year}.')
+        logger.info(f'Completed ETL process for years: {valid_years}.')
+    else:
+        logger.info('No valid years found. Skipping ETL process.')
 
     DuckDBConnection().close()
 
