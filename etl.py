@@ -6,6 +6,8 @@ import modal
 from etl_process.extract import extract
 from etl_process.load import load
 from etl_process.transform import transform
+from utils.check_config_files import config_files_exist
+from utils.db_connection import DuckDBConnection
 from utils.logging_config import setup_logging
 
 setup_logging()
@@ -37,6 +39,12 @@ def etl(years: list[int] = DEFAULT_YEARS, dry_run: bool = False):
     extract()
 
     for year in years:
+        if not config_files_exist(year):
+            logger.warning(
+                f'Config files for {year} do not exist. Skipping ETL process for {year}.'
+            )
+            continue
+
         logger.info(f'Transforming data for {year}.')
         transform(year=year)
 
@@ -46,7 +54,7 @@ def etl(years: list[int] = DEFAULT_YEARS, dry_run: bool = False):
 
         logger.info(f'Completed ETL process for {year}.')
 
-    logger.info('ETL process completed.')
+    DuckDBConnection().close()
 
 
 if __name__ == '__main__':
