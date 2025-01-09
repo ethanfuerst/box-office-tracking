@@ -19,7 +19,7 @@ modal_image = modal.Image.debian_slim(python_version='3.10').poetry_install_from
     poetry_pyproject_toml='pyproject.toml'
 )
 
-DEFAULT_YEARS = [2024]
+DEFAULT_YEARS = [2024, 2025]
 
 
 @app.function(
