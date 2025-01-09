@@ -46,7 +46,9 @@ def etl(years: list[int] = DEFAULT_YEARS, dry_run: bool = False):
             )
 
     if valid_years:
+        valid_years = sorted(valid_years)
         valid_years_str = ', '.join(map(str, valid_years))
+
         extract()
 
         logger.info(f'Transforming data for years: {valid_years_str}.')
