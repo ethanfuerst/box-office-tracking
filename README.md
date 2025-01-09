@@ -32,7 +32,3 @@ Each year must have the following:
   - BUCKET
     - Name of the s3 bucket (and path, if applicable) that contains the box office data.
     - The files must be named in the format boxofficemojo_YYYYMMDD.parquet, where YYYYMMDD is the date the data was scraped.
-
-To Do:
-- add in a check after loading to get the movies that have a lower revenue than the lowest revenue in the most recent top 200
-- add tests
