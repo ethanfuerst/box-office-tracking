@@ -1,11 +1,9 @@
 from logging import getLogger
 from typing import Dict, List, Optional
 
-from dotenv import load_dotenv
 from gspread import Worksheet
 from pandas import DataFrame
 
-load_dotenv()
 logger = getLogger(__name__)
 
 
