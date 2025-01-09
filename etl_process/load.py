@@ -255,7 +255,57 @@ def load(year: int) -> None:
     movies_missing_from_scoreboard = list(set(drafted_movies) - set(released_movies))
 
     if movies_missing_from_scoreboard:
-        logger.info("Movies missing from scoreboard:")
+        logger.info(
+            "The following movies are missing from the scoreboard and should be added to the manual_adds.csv file:"
+        )
         logger.info(", ".join(sorted(movies_missing_from_scoreboard)))
     else:
         logger.info("All movies are on the scoreboard.")
+
+    min_revenue_of_most_recent_data = duckdb_con.sql(
+        f'''
+        with most_recent_data as (
+            select title, revenue
+            from s3_dump where year_part = {year}
+            qualify rank() over (order by loaded_date desc) = 1
+            order by 2 desc
+        )
+
+        select title, revenue
+        from most_recent_data qualify row_number() over (order by revenue asc) = 1;
+    '''
+    ).fetchnumpy()['revenue'][0]
+
+    logger.info(
+        f'Minimum revenue of most recent data: {min_revenue_of_most_recent_data}'
+    )
+
+    movies_under_min_revenue = (
+        duckdb_con.sql(
+            f'''
+        with raw_data as (
+            select title, revenue
+            from s3_dump
+            where year_part = {year}
+            qualify row_number() over (partition by title order by loaded_date desc) = 1
+        )
+
+        select raw_data.title from raw_data
+        inner join base_query
+            on raw_data.title = base_query.title
+        where raw_data.revenue <= {min_revenue_of_most_recent_data}
+    '''
+        )
+        .fetchnumpy()['title']
+        .tolist()
+    )
+
+    if movies_under_min_revenue:
+        logger.info(
+            'The most recent records for the following movies are under the minimum revenue of the most recent data pull, may not have the correct revenue and should be added to the manual_adds.csv file:'
+        )
+        logger.info(f'{", ".join(movies_under_min_revenue)}')
+    else:
+        logger.info(
+            'All movies are above the minimum revenue of the most recent data pull.'
+        )
