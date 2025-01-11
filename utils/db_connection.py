@@ -13,18 +13,18 @@ class DuckDBConnection:
         if cls._instance is None:
             cls._instance = super(DuckDBConnection, cls).__new__(cls)
             cls._instance.connection = duckdb.connect(
-                database=":memory:", read_only=False
+                database=':memory:', read_only=False
             )
             cls._configure_connection(cls._instance.connection)
         return cls._instance.connection
 
     @staticmethod
     def _configure_connection(conn):
-        s3_access_key_id = os.getenv("S3_ACCESS_KEY_ID")
-        s3_secret_access_key = os.getenv("S3_SECRET_ACCESS_KEY")
+        s3_access_key_id = os.getenv('S3_ACCESS_KEY_ID')
+        s3_secret_access_key = os.getenv('S3_SECRET_ACCESS_KEY')
 
         conn.execute(
-            f"""
+            f'''
             install httpfs;
             load httpfs;
             CREATE SECRET (
@@ -34,7 +34,7 @@ class DuckDBConnection:
                 REGION 'nyc3',
                 ENDPOINT 'nyc3.digitaloceanspaces.com'
             );
-            """
+            '''
         )
 
     @classmethod

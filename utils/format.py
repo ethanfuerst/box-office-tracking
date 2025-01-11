@@ -7,7 +7,7 @@ def remove_comments(obj: Union[Dict, List]) -> Union[Dict, List]:
         return {
             k: remove_comments(v)
             for k, v in obj.items()
-            if not k.startswith("_comment")
+            if not k.startswith('_comment')
         }
     elif isinstance(obj, list):
         return [remove_comments(item) for item in obj]
@@ -16,6 +16,6 @@ def remove_comments(obj: Union[Dict, List]) -> Union[Dict, List]:
 
 
 def load_format_config(file_path: str) -> dict:
-    with open(file_path, "r") as file:
+    with open(file_path, 'r') as file:
         config = json.load(file)
     return remove_comments(config)
