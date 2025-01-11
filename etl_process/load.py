@@ -18,11 +18,8 @@ logger = getLogger(__name__)
 
 
 def load(year: int) -> None:
-    duckdb_con = DuckDBConnection()
-
     released_movies_df = temp_table_to_df(
         "base_query",
-        duckdb_con,
         columns=[
             "Rank",
             "Title",
@@ -45,7 +42,6 @@ def load(year: int) -> None:
 
     scoreboard_df = temp_table_to_df(
         "scoreboard",
-        duckdb_con,
         columns=[
             "Name",
             "Scored Revenue",
@@ -71,7 +67,6 @@ def load(year: int) -> None:
 
     worst_picks_df = temp_table_to_df(
         "worst_picks",
-        duckdb_con,
         columns=[
             "Rank",
             "Title",
@@ -261,6 +256,8 @@ def load(year: int) -> None:
         logger.info(", ".join(sorted(movies_missing_from_scoreboard)))
     else:
         logger.info("All movies are on the scoreboard.")
+
+    duckdb_con = DuckDBConnection()
 
     min_revenue_of_most_recent_data = duckdb_con.sql(
         f'''
