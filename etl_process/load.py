@@ -1,12 +1,13 @@
-import datetime
 import json
 import os
+from datetime import datetime
 from logging import getLogger
+from typing import List
 
-import gspread
 import gspread_formatting as gsf
-import pandas as pd
 from dotenv import load_dotenv
+from gspread import Worksheet, service_account_from_dict
+from pandas import DataFrame, read_csv
 
 from utils.db_connection import DuckDBConnection
 from utils.format import load_format_config
@@ -17,7 +18,7 @@ load_dotenv()
 logger = getLogger(__name__)
 
 
-def fetch_dataframes() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def fetch_dataframes() -> tuple[DataFrame, DataFrame, DataFrame]:
     released_movies_df = temp_table_to_df(
         'base_query',
         columns=[
@@ -101,14 +102,12 @@ def prepare_dashboard_elements(released_movies_df, scoreboard_df, worst_picks_df
     return dashboard_elements, add_worst_picks
 
 
-def setup_worksheet(
-    year: int, released_movies_df: pd.DataFrame
-) -> tuple[gspread.Worksheet, int]:
+def setup_worksheet(year: int, released_movies_df: DataFrame) -> tuple[Worksheet, int]:
     gspread_credentials_key = f'GSPREAD_CREDENTIALS_{year}'
     gspread_credentials = os.getenv(gspread_credentials_key)
     if gspread_credentials is not None:
         credentials_dict = json.loads(gspread_credentials.replace('\n', '\\n'))
-        gc = gspread.service_account_from_dict(credentials_dict)
+        gc = service_account_from_dict(credentials_dict)
     else:
         raise ValueError(
             f'{gspread_credentials_key} is not set or is invalid in the .env file.'
@@ -131,8 +130,8 @@ def setup_worksheet(
 
 
 def update_dashboard(
-    worksheet: gspread.Worksheet,
-    dashboard_elements: list[tuple[pd.DataFrame, str, dict]],
+    worksheet: Worksheet,
+    dashboard_elements: List[tuple[DataFrame, str, dict]],
     add_worst_picks: bool,
     sheet_height: int,
 ) -> None:
@@ -146,11 +145,7 @@ def update_dashboard(
 
     # Adding last updated header
     worksheet.update(
-        values=[
-            [
-                f'Last Updated UTC\n{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
-            ]
-        ],
+        values=[[f'Last Updated UTC\n{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}']],
         range_name='G2',
     )
     worksheet.format(
@@ -225,7 +220,7 @@ def update_dashboard(
     gsf.set_column_width(worksheet, 'X', 106)
 
 
-def update_titles(worksheet: gspread.Worksheet, add_worst_picks: bool) -> None:
+def update_titles(worksheet: Worksheet, add_worst_picks: bool) -> None:
     worksheet.update(values=[['Fantasy Box Office Standings']], range_name='B2')
     worksheet.format(
         'B2',
@@ -248,7 +243,7 @@ def update_titles(worksheet: gspread.Worksheet, add_worst_picks: bool) -> None:
         worksheet.merge_cells('B11:G11')
 
 
-def apply_conditional_formatting(worksheet: gspread.Worksheet) -> None:
+def apply_conditional_formatting(worksheet: Worksheet) -> None:
     still_in_theater_rule = gsf.ConditionalFormatRule(
         ranges=[gsf.GridRange.from_a1_range('X5:X', worksheet)],
         booleanRule=gsf.BooleanRule(
@@ -266,8 +261,8 @@ def apply_conditional_formatting(worksheet: gspread.Worksheet) -> None:
     logger.info('Dashboard updated and formatted')
 
 
-def log_missing_movies(released_movies_df: pd.DataFrame, year: int) -> None:
-    draft_df = pd.read_csv(f'assets/drafts/{year}/box_office_draft.csv')
+def log_missing_movies(released_movies_df: DataFrame, year: int) -> None:
+    draft_df = read_csv(f'assets/drafts/{year}/box_office_draft.csv')
     released_movies = released_movies_df['Title'].tolist()
     drafted_movies = draft_df['movie'].tolist()
     movies_missing_from_scoreboard = list(set(drafted_movies) - set(released_movies))
