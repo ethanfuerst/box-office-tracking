@@ -17,7 +17,7 @@ load_dotenv()
 logger = getLogger(__name__)
 
 
-def load(year: int) -> None:
+def fetch_dataframes() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     released_movies_df = temp_table_to_df(
         'base_query',
         columns=[
@@ -52,6 +52,22 @@ def load(year: int) -> None:
         ],
     )
 
+    worst_picks_df = temp_table_to_df(
+        'worst_picks',
+        columns=[
+            'Rank',
+            'Title',
+            'Drafted By',
+            'Overall Pick',
+            'Number of Better Picks',
+            'Missed Revenue',
+        ],
+    )
+
+    return released_movies_df, scoreboard_df, worst_picks_df
+
+
+def prepare_dashboard_elements(released_movies_df, scoreboard_df, worst_picks_df):
     dashboard_elements = [
         (
             scoreboard_df,
@@ -64,18 +80,6 @@ def load(year: int) -> None:
             load_format_config('assets/released_movies_format.json'),
         ),
     ]
-
-    worst_picks_df = temp_table_to_df(
-        'worst_picks',
-        columns=[
-            'Rank',
-            'Title',
-            'Drafted By',
-            'Overall Pick',
-            'Number of Better Picks',
-            'Missed Revenue',
-        ],
-    )
 
     add_worst_picks = (
         len(released_movies_df) > len(scoreboard_df) + 3 and len(worst_picks_df) > 1
@@ -94,6 +98,12 @@ def load(year: int) -> None:
             )
         )
 
+    return dashboard_elements, add_worst_picks
+
+
+def setup_worksheet(
+    year: int, released_movies_df: pd.DataFrame
+) -> tuple[gspread.Worksheet, int]:
     gspread_credentials_key = f'GSPREAD_CREDENTIALS_{year}'
     gspread_credentials = os.getenv(gspread_credentials_key)
     if gspread_credentials is not None:
@@ -117,7 +127,15 @@ def load(year: int) -> None:
     )
     worksheet = sh.worksheet(worksheet_title)
 
-    # Adding each dashboard element
+    return worksheet, sheet_height
+
+
+def update_dashboard(
+    worksheet: gspread.Worksheet,
+    dashboard_elements: list[tuple[pd.DataFrame, str, dict]],
+    add_worst_picks: bool,
+    sheet_height: int,
+) -> None:
     for element in dashboard_elements:
         df_to_sheet(
             df=element[0],
@@ -206,7 +224,8 @@ def load(year: int) -> None:
     gsf.set_column_width(worksheet, 'W', 104)
     gsf.set_column_width(worksheet, 'X', 106)
 
-    # Adding titles
+
+def update_titles(worksheet: gspread.Worksheet, add_worst_picks: bool) -> None:
     worksheet.update(values=[['Fantasy Box Office Standings']], range_name='B2')
     worksheet.format(
         'B2',
@@ -228,6 +247,8 @@ def load(year: int) -> None:
         )
         worksheet.merge_cells('B11:G11')
 
+
+def apply_conditional_formatting(worksheet: gspread.Worksheet) -> None:
     still_in_theater_rule = gsf.ConditionalFormatRule(
         ranges=[gsf.GridRange.from_a1_range('X5:X', worksheet)],
         booleanRule=gsf.BooleanRule(
@@ -244,6 +265,8 @@ def load(year: int) -> None:
 
     logger.info('Dashboard updated and formatted')
 
+
+def log_missing_movies(released_movies_df: pd.DataFrame, year: int) -> None:
     draft_df = pd.read_csv(f'assets/drafts/{year}/box_office_draft.csv')
     released_movies = released_movies_df['Title'].tolist()
     drafted_movies = draft_df['movie'].tolist()
@@ -257,6 +280,8 @@ def load(year: int) -> None:
     else:
         logger.info('All movies are on the scoreboard.')
 
+
+def log_min_revenue_info(year: int) -> None:
     duckdb_con = DuckDBConnection()
 
     min_revenue_of_most_recent_data = duckdb_con.sql(
@@ -306,3 +331,16 @@ def load(year: int) -> None:
         logger.info(
             'All movies are above the minimum revenue of the most recent data pull.'
         )
+
+
+def load(year: int) -> None:
+    released_movies_df, scoreboard_df, worst_picks_df = fetch_dataframes()
+    dashboard_elements, add_worst_picks = prepare_dashboard_elements(
+        released_movies_df, scoreboard_df, worst_picks_df
+    )
+    worksheet, sheet_height = setup_worksheet(year, released_movies_df)
+    update_dashboard(worksheet, dashboard_elements, add_worst_picks, sheet_height)
+    update_titles(worksheet, add_worst_picks)
+    apply_conditional_formatting(worksheet)
+    log_missing_movies(released_movies_df, year)
+    log_min_revenue_info(year)
