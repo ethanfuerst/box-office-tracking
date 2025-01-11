@@ -3,7 +3,7 @@ from logging import getLogger
 
 from utils.db_connection import DuckDBConnection
 
-S3_DATE_FORMAT = "%Y%m%d"
+S3_DATE_FORMAT = '%Y%m%d'
 
 
 logger = getLogger(__name__)
@@ -15,7 +15,7 @@ def extract() -> None:
     bucket = os.getenv('BUCKET')
 
     duckdb_con.execute(
-        f"""
+        f'''
         create temp table s3_dump as (
             with all_data as (
                 select
@@ -35,14 +35,14 @@ def extract() -> None:
                 , if(year_part = 'ytd', try_cast(year as int), try_cast(year_part as int)) as year_part
             from all_data
         )
-        """
+        '''
     )
 
-    row_count = "select count(*) from s3_dump"
+    row_count = 'select count(*) from s3_dump'
     logger.info(
         f'Read {duckdb_con.sql(row_count).fetchnumpy()["count_star()"][0]} rows with query from s3 bucket'
     )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     extract()

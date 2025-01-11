@@ -18,67 +18,62 @@ logger = getLogger(__name__)
 
 
 def load(year: int) -> None:
-    duckdb_con = DuckDBConnection()
-
     released_movies_df = temp_table_to_df(
-        "base_query",
-        duckdb_con,
+        'base_query',
         columns=[
-            "Rank",
-            "Title",
-            "Drafted By",
-            "Revenue",
-            "Scored Revenue",
-            "Round Drafted",
-            "Overall Pick",
-            "Multiplier",
-            "Domestic Revenue",
-            "Domestic Revenue %",
-            "Foreign Revenue",
-            "Foreign Revenue %",
-            "Better Pick",
-            "Better Pick Scored Revenue",
-            "First Seen Date",
-            "Still In Theaters",
+            'Rank',
+            'Title',
+            'Drafted By',
+            'Revenue',
+            'Scored Revenue',
+            'Round Drafted',
+            'Overall Pick',
+            'Multiplier',
+            'Domestic Revenue',
+            'Domestic Revenue %',
+            'Foreign Revenue',
+            'Foreign Revenue %',
+            'Better Pick',
+            'Better Pick Scored Revenue',
+            'First Seen Date',
+            'Still In Theaters',
         ],
     )
 
     scoreboard_df = temp_table_to_df(
-        "scoreboard",
-        duckdb_con,
+        'scoreboard',
         columns=[
-            "Name",
-            "Scored Revenue",
-            "# Released",
-            "# Optimal Picks",
-            "% Optimal Picks",
-            "Unadjusted Revenue",
+            'Name',
+            'Scored Revenue',
+            '# Released',
+            '# Optimal Picks',
+            '% Optimal Picks',
+            'Unadjusted Revenue',
         ],
     )
 
     dashboard_elements = [
         (
             scoreboard_df,
-            "B4",
-            load_format_config("assets/scoreboard_format.json"),
+            'B4',
+            load_format_config('assets/scoreboard_format.json'),
         ),
         (
             released_movies_df,
-            "I4",
-            load_format_config("assets/released_movies_format.json"),
+            'I4',
+            load_format_config('assets/released_movies_format.json'),
         ),
     ]
 
     worst_picks_df = temp_table_to_df(
-        "worst_picks",
-        duckdb_con,
+        'worst_picks',
         columns=[
-            "Rank",
-            "Title",
-            "Drafted By",
-            "Overall Pick",
-            "Number of Better Picks",
-            "Missed Revenue",
+            'Rank',
+            'Title',
+            'Drafted By',
+            'Overall Pick',
+            'Number of Better Picks',
+            'Missed Revenue',
         ],
     )
 
@@ -94,24 +89,24 @@ def load(year: int) -> None:
         dashboard_elements.append(
             (
                 worst_picks_df,
-                "B12",
-                load_format_config("assets/worst_picks_format.json"),
+                'B12',
+                load_format_config('assets/worst_picks_format.json'),
             )
         )
 
-    gspread_credentials_key = f"GSPREAD_CREDENTIALS_{year}"
+    gspread_credentials_key = f'GSPREAD_CREDENTIALS_{year}'
     gspread_credentials = os.getenv(gspread_credentials_key)
     if gspread_credentials is not None:
-        credentials_dict = json.loads(gspread_credentials.replace("\n", "\\n"))
+        credentials_dict = json.loads(gspread_credentials.replace('\n', '\\n'))
         gc = gspread.service_account_from_dict(credentials_dict)
     else:
         raise ValueError(
-            f"{gspread_credentials_key} is not set or is invalid in the .env file."
+            f'{gspread_credentials_key} is not set or is invalid in the .env file.'
         )
 
-    sh = gc.open(f"{year} Fantasy Box Office Draft")
+    sh = gc.open(f'{year} Fantasy Box Office Draft')
 
-    worksheet_title = "Dashboard"
+    worksheet_title = 'Dashboard'
     worksheet = sh.worksheet(worksheet_title)
 
     sh.del_worksheet(worksheet)
@@ -138,12 +133,12 @@ def load(year: int) -> None:
                 f'Last Updated UTC\n{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
             ]
         ],
-        range_name="G2",
+        range_name='G2',
     )
     worksheet.format(
-        "G2",
+        'G2',
         {
-            "horizontalAlignment": "CENTER",
+            'horizontalAlignment': 'CENTER',
         },
     )
 
@@ -152,91 +147,91 @@ def load(year: int) -> None:
     worksheet.columns_auto_resize(8, 23)
 
     worksheet.format(
-        "B4:G4",
+        'B4:G4',
         {
-            "horizontalAlignment": "CENTER",
-            "textFormat": {
-                "fontSize": 10,
-                "bold": True,
+            'horizontalAlignment': 'CENTER',
+            'textFormat': {
+                'fontSize': 10,
+                'bold': True,
             },
         },
     )
     if add_worst_picks:
         worksheet.format(
-            "B12:G12",
+            'B12:G12',
             {
-                "horizontalAlignment": "CENTER",
-                "textFormat": {
-                    "fontSize": 10,
-                    "bold": True,
+                'horizontalAlignment': 'CENTER',
+                'textFormat': {
+                    'fontSize': 10,
+                    'bold': True,
                 },
             },
         )
     worksheet.format(
-        "I4:X4",
+        'I4:X4',
         {
-            "horizontalAlignment": "CENTER",
-            "textFormat": {
-                "fontSize": 10,
-                "bold": True,
+            'horizontalAlignment': 'CENTER',
+            'textFormat': {
+                'fontSize': 10,
+                'bold': True,
             },
         },
     )
 
     for i in range(5, sheet_height):
-        if worksheet.acell(f"V{i}").value == "$0":
-            worksheet.update(values=[[""]], range_name=f"V{i}")
+        if worksheet.acell(f'V{i}').value == '$0':
+            worksheet.update(values=[['']], range_name=f'V{i}')
 
     # resizing spacer columns
-    spacer_columns = ["A", "H", "Y"]
+    spacer_columns = ['A', 'H', 'Y']
     for column in spacer_columns:
         gsf.set_column_width(worksheet, column, 25)
 
     # for some reason the auto resize still cuts off some of the title
-    title_columns = ["J", "U"]
+    title_columns = ['J', 'U']
 
     if add_worst_picks:
-        title_columns.append("C")
+        title_columns.append('C')
 
     for column in title_columns:
         gsf.set_column_width(worksheet, column, 284)
 
     # revenue columns will also get cut off
-    revenue_columns = ["L", "M", "R", "S"]
+    revenue_columns = ['L', 'M', 'R', 'S']
     for column in revenue_columns:
         gsf.set_column_width(worksheet, column, 120)
 
     # gets resized wrong and have to do it manually
-    gsf.set_column_width(worksheet, "R", 142)
-    gsf.set_column_width(worksheet, "W", 104)
-    gsf.set_column_width(worksheet, "X", 106)
+    gsf.set_column_width(worksheet, 'R', 142)
+    gsf.set_column_width(worksheet, 'W', 104)
+    gsf.set_column_width(worksheet, 'X', 106)
 
     # Adding titles
-    worksheet.update(values=[["Fantasy Box Office Standings"]], range_name="B2")
+    worksheet.update(values=[['Fantasy Box Office Standings']], range_name='B2')
     worksheet.format(
-        "B2",
-        {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
+        'B2',
+        {'horizontalAlignment': 'CENTER', 'textFormat': {'fontSize': 20, 'bold': True}},
     )
-    worksheet.merge_cells("B2:F2")
-    worksheet.update(values=[["Released Movies"]], range_name="I2")
+    worksheet.merge_cells('B2:F2')
+    worksheet.update(values=[['Released Movies']], range_name='I2')
     worksheet.format(
-        "I2",
-        {"horizontalAlignment": "CENTER", "textFormat": {"fontSize": 20, "bold": True}},
+        'I2',
+        {'horizontalAlignment': 'CENTER', 'textFormat': {'fontSize': 20, 'bold': True}},
     )
-    worksheet.merge_cells("I2:X2")
+    worksheet.merge_cells('I2:X2')
 
     if add_worst_picks:
-        worksheet.update(values=[["Worst Picks"]], range_name="B11")
+        worksheet.update(values=[['Worst Picks']], range_name='B11')
         worksheet.format(
-            "B11",
-            {"horizontalAlignment": "CENTER", "textFormat": {"bold": True}},
+            'B11',
+            {'horizontalAlignment': 'CENTER', 'textFormat': {'bold': True}},
         )
-        worksheet.merge_cells("B11:G11")
+        worksheet.merge_cells('B11:G11')
 
     still_in_theater_rule = gsf.ConditionalFormatRule(
-        ranges=[gsf.GridRange.from_a1_range("X5:X", worksheet)],
+        ranges=[gsf.GridRange.from_a1_range('X5:X', worksheet)],
         booleanRule=gsf.BooleanRule(
-            condition=gsf.BooleanCondition("TEXT_EQ", ["Yes"]),
+            condition=gsf.BooleanCondition('TEXT_EQ', ['Yes']),
             format=gsf.CellFormat(
                 backgroundColor=gsf.Color(0, 0.9, 0),
             ),
@@ -247,20 +242,22 @@ def load(year: int) -> None:
     rules.append(still_in_theater_rule)
     rules.save()
 
-    logger.info("Dashboard updated and formatted")
+    logger.info('Dashboard updated and formatted')
 
-    draft_df = pd.read_csv(f"assets/drafts/{year}/box_office_draft.csv")
-    released_movies = released_movies_df["Title"].tolist()
-    drafted_movies = draft_df["movie"].tolist()
+    draft_df = pd.read_csv(f'assets/drafts/{year}/box_office_draft.csv')
+    released_movies = released_movies_df['Title'].tolist()
+    drafted_movies = draft_df['movie'].tolist()
     movies_missing_from_scoreboard = list(set(drafted_movies) - set(released_movies))
 
     if movies_missing_from_scoreboard:
         logger.info(
-            "The following movies are missing from the scoreboard and should be added to the manual_adds.csv file:"
+            'The following movies are missing from the scoreboard and should be added to the manual_adds.csv file:'
         )
-        logger.info(", ".join(sorted(movies_missing_from_scoreboard)))
+        logger.info(', '.join(sorted(movies_missing_from_scoreboard)))
     else:
-        logger.info("All movies are on the scoreboard.")
+        logger.info('All movies are on the scoreboard.')
+
+    duckdb_con = DuckDBConnection()
 
     min_revenue_of_most_recent_data = duckdb_con.sql(
         f'''
@@ -304,7 +301,7 @@ def load(year: int) -> None:
         logger.info(
             'The most recent records for the following movies are under the minimum revenue of the most recent data pull, may not have the correct revenue and should be added to the manual_adds.csv file:'
         )
-        logger.info(f'{", ".join(movies_under_min_revenue)}')
+        logger.info(', '.join(sorted(movies_under_min_revenue)))
     else:
         logger.info(
             'All movies are above the minimum revenue of the most recent data pull.'
