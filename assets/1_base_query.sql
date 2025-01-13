@@ -90,6 +90,13 @@ create table base_query as (
         from read_csv('assets/drafts/$year/box_office_draft.csv', auto_detect=true)
     )
 
+    , round_multiplier_overrides as (
+        select
+            round
+            , multiplier
+        from read_csv('assets/drafts/$year/round_multiplier_overrides.csv', auto_detect=true)
+    )
+
     , full_data as (
         select
             base_table.title
@@ -97,8 +104,8 @@ create table base_query as (
             , drafter.overall_pick
             , coalesce(base_table.revenue, 0) as revenue
             , drafter.round
-            , case when drafter.round > 13 then 5 else 1 end as multiplier
-            , coalesce(multiplier * base_table.revenue, 0) as scored_revenue
+            , coalesce(round_multiplier_overrides.multiplier, 1) as multiplier
+            , coalesce(coalesce(round_multiplier_overrides.multiplier, 1) * base_table.revenue, 0) as scored_revenue
             , coalesce(base_table.domestic_rev, 0) as domestic_rev
             , coalesce(base_table.foreign_rev, 0) as foreign_rev
             , coalesce(round(base_table.domestic_rev / base_table.revenue, 4), 0) as domestic_pct
@@ -110,6 +117,8 @@ create table base_query as (
             on base_table.title = drafter.movie
         left join currently_updating
             on base_table.title = currently_updating.title
+        left join round_multiplier_overrides
+            on drafter.round = round_multiplier_overrides.round
     )
 
     , better_pick_calc as (
