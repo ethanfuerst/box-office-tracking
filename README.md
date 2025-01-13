@@ -32,6 +32,9 @@ Each year must have the following:
     - List of movies that do not show up in the top 200 at the end of the year so they must be added manually.
     - This file must have at least 1 row, which can be an empty row if there are no manual adds.
     - Columns: title, revenue, domestic_rev, foreign_rev, release_date
+  - movie_multiplier_overrides.csv
+    - If you want, you can add a multiplier for each movie. These amounts will be multiplied by the revenue to determine the scored revenue.
+    - Columns: movie, multiplier
   - round_multiplier_overrides.csv
     - If you want, you can add a multiplier for each round. These amounts will be multiplied by the revenue to determine the scored revenue.
     - Columns: round, multiplier

@@ -97,6 +97,13 @@ create table base_query as (
         from read_csv('assets/drafts/$year/round_multiplier_overrides.csv', auto_detect=true)
     )
 
+    , movie_multiplier_overrides as (
+        select
+            movie
+            , multiplier
+        from read_csv('assets/drafts/$year/movie_multiplier_overrides.csv', auto_detect=true)
+    )
+
     , full_data as (
         select
             base_table.title
@@ -104,8 +111,8 @@ create table base_query as (
             , drafter.overall_pick
             , coalesce(base_table.revenue, 0) as revenue
             , drafter.round
-            , coalesce(round_multiplier_overrides.multiplier, 1) as multiplier
-            , coalesce(coalesce(round_multiplier_overrides.multiplier, 1) * base_table.revenue, 0) as scored_revenue
+            , coalesce(round_multiplier_overrides.multiplier::float, 1) * coalesce(movie_multiplier_overrides.multiplier::float, 1) as multiplier
+            , round(coalesce(coalesce(round_multiplier_overrides.multiplier::float, 1) * coalesce(movie_multiplier_overrides.multiplier::float, 1) * base_table.revenue::float, 0), 0) as scored_revenue
             , coalesce(base_table.domestic_rev, 0) as domestic_rev
             , coalesce(base_table.foreign_rev, 0) as foreign_rev
             , coalesce(round(base_table.domestic_rev / base_table.revenue, 4), 0) as domestic_pct
@@ -119,6 +126,8 @@ create table base_query as (
             on base_table.title = currently_updating.title
         left join round_multiplier_overrides
             on drafter.round = round_multiplier_overrides.round
+        left join movie_multiplier_overrides
+            on base_table.title = movie_multiplier_overrides.movie
     )
 
     , better_pick_calc as (
