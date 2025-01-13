@@ -1,4 +1,4 @@
-create table base_query as (
+create or replace table base_query as (
     with raw_data as (
         select
             title

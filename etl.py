@@ -51,13 +51,12 @@ def etl(years: list[int] = DEFAULT_YEARS, dry_run: bool = False):
 
         extract()
 
-        logger.info(f'Transforming data for years: {valid_years_str}.')
         for year in valid_years:
+            logger.info(f'Transforming data for year: {year}.')
             transform(year=year)
 
-        if not dry_run:
-            logger.info(f'Loading data for years: {valid_years_str}.')
-            for year in valid_years:
+            if not dry_run:
+                logger.info(f'Loading data for year: {year}.')
                 load(year=year)
 
         logger.info(f'Completed ETL process for years: {valid_years_str}.')

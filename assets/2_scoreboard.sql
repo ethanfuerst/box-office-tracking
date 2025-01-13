@@ -1,4 +1,4 @@
-create table scoreboard as (
+create or replace table scoreboard as (
     select
         drafted_by as name
         , sum(scored_revenue) as scored_revenue

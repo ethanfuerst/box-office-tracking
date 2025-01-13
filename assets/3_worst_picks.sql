@@ -1,4 +1,4 @@
-create table worst_picks as (
+create or replace table worst_picks as (
     with base_query_cte as (
         select
             title
