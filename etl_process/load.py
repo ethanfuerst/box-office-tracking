@@ -245,8 +245,8 @@ def load(year: int) -> None:
     logger.info('Dashboard updated and formatted')
 
     draft_df = pd.read_csv(f'assets/drafts/{year}/box_office_draft.csv')
-    released_movies = released_movies_df['Title'].tolist()
-    drafted_movies = draft_df['movie'].tolist()
+    released_movies = [str(movie) for movie in released_movies_df['Title'].tolist()]
+    drafted_movies = [str(movie) for movie in draft_df['movie'].tolist()]
     movies_missing_from_scoreboard = list(set(drafted_movies) - set(released_movies))
 
     if movies_missing_from_scoreboard:
