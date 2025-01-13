@@ -140,7 +140,7 @@ create table base_query as (
             , case
                 when better_pick_available and picks.multiplier = 1
                     then max(better_picks.revenue)
-                when better_pick_available and picks.multiplier = 5
+                when better_pick_available and picks.multiplier != 1
                     then max(better_picks.scored_revenue)
                 else 0
             end as better_pick_scored_revenue
