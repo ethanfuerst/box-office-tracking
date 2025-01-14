@@ -5,21 +5,25 @@ create or replace table worst_picks as (
             , drafted_by
             , overall_pick
             , scored_revenue
+            , multiplier
         from base_query
     )
 
     , better_picks as (
         select
-            base_query_cte.title
+            base.title
+            , base.multiplier
             , count(distinct better_pick.title) as number_of_better_picks
             , max(better_pick.scored_revenue) as max_better_pick_revenue
-        from base_query_cte
+        from base_query_cte as base
         left join base_query_cte as better_pick
-            on base_query_cte.overall_pick < better_pick.overall_pick
-            and base_query_cte.title != better_pick.title
-            and base_query_cte.scored_revenue < better_pick.scored_revenue
+            on base.scored_revenue < better_pick.scored_revenue
+            and base.overall_pick < better_pick.overall_pick
+            and base.drafted_by != better_pick.drafted_by
+        where
+            better_pick.scored_revenue > 0
         group by
-            1
+            1, 2
     )
 
     , final as (

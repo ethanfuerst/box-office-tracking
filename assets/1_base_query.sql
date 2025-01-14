@@ -132,11 +132,10 @@ create or replace table base_query as (
 
     , better_pick_calc as (
         select
-            picks.round
-            , picks.overall_pick
+            picks.overall_pick
             , picks.revenue
             , picks.multiplier
-            , count(better_picks.overall_pick) > 0 as better_pick_available
+            , count(distinct better_picks.title) > 0 as better_pick_available
             , case
                 when better_pick_available and picks.multiplier = 1
                     then max(better_picks.revenue)
@@ -146,16 +145,13 @@ create or replace table base_query as (
             end as better_pick_scored_revenue
         from full_data as picks
         left join full_data as better_picks
-            on picks.revenue < better_picks.revenue
+            on picks.scored_revenue < better_picks.scored_revenue
             and picks.overall_pick < better_picks.overall_pick
+            and picks.drafted_by != better_picks.drafted_by
         where
-            better_picks.revenue > 0
-            and better_picks.scored_revenue > 0
+            better_picks.scored_revenue > 0
         group by
-            picks.round
-            , picks.overall_pick
-            , picks.revenue
-            , picks.multiplier
+            1, 2, 3
     )
 
     , better_pick_final as (
