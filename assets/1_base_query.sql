@@ -192,7 +192,12 @@ create or replace table better_pick_int as (
             )
     left join round_multiplier_overrides
         on picks.round = round_multiplier_overrides.round
-    where (missed_revenue > 0 or missed_revenue is null)
+    where
+        (missed_revenue > 0 or missed_revenue is null)
+        and better_pick.title not in (
+            select distinct movie_better_pick_exclusions.movie
+            from movie_better_pick_exclusions
+        )
 );
 
 create or replace table better_pick_final as (

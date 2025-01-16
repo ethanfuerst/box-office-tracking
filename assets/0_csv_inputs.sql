@@ -30,6 +30,15 @@ create or replace table movie_multiplier_overrides as (
         )
 );
 
+create or replace table movie_better_pick_exclusions as (
+    select movie
+    from
+        read_csv(
+            'assets/drafts/$year/movie_better_pick_exclusions.csv'
+            , auto_detect = true
+        )
+);
+
 create or replace table manual_adds as (
     select
         title
