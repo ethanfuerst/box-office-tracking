@@ -12,7 +12,7 @@ create or replace table worst_picks as (
     , better_picks as (
         select
             title
-            , count(distinct title) as number_of_better_picks
+            , count(distinct better_pick_title) as number_of_better_picks
             , max(missed_revenue) as max_better_pick_revenue
         from better_pick_int
         group by 1
