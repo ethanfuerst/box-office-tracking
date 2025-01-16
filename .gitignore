@@ -161,3 +161,6 @@ cython_debug/
 
 # etc.
 config/
+
+# DuckDB
+box_office_db.duckdb

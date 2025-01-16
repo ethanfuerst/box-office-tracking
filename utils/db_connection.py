@@ -13,7 +13,8 @@ class DuckDBConnection:
         if cls._instance is None:
             cls._instance = super(DuckDBConnection, cls).__new__(cls)
             cls._instance.connection = duckdb.connect(
-                database=':memory:', read_only=False
+                database='box_office_db.duckdb',
+                read_only=False,
             )
             cls._configure_connection(cls._instance.connection)
         return cls._instance.connection

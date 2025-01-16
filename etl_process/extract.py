@@ -16,7 +16,7 @@ def extract() -> None:
 
     duckdb_con.execute(
         f'''
-        create temp table s3_dump as (
+        create or replace table s3_dump as (
             with all_data as (
                 select
                     *
