@@ -1,4 +1,4 @@
-create table base_query as (
+create or replace table base_query as (
     with raw_data as (
         select
             title
@@ -90,6 +90,20 @@ create table base_query as (
         from read_csv('assets/drafts/$year/box_office_draft.csv', auto_detect=true)
     )
 
+    , round_multiplier_overrides as (
+        select
+            round
+            , multiplier
+        from read_csv('assets/drafts/$year/round_multiplier_overrides.csv', auto_detect=true)
+    )
+
+    , movie_multiplier_overrides as (
+        select
+            movie
+            , multiplier
+        from read_csv('assets/drafts/$year/movie_multiplier_overrides.csv', auto_detect=true)
+    )
+
     , full_data as (
         select
             base_table.title
@@ -97,8 +111,8 @@ create table base_query as (
             , drafter.overall_pick
             , coalesce(base_table.revenue, 0) as revenue
             , drafter.round
-            , case when drafter.round > 13 then 5 else 1 end as multiplier
-            , coalesce(multiplier * base_table.revenue, 0) as scored_revenue
+            , coalesce(round_multiplier_overrides.multiplier::float, 1) * coalesce(movie_multiplier_overrides.multiplier::float, 1) as multiplier
+            , round(coalesce(coalesce(round_multiplier_overrides.multiplier::float, 1) * coalesce(movie_multiplier_overrides.multiplier::float, 1) * base_table.revenue::float, 0), 0) as scored_revenue
             , coalesce(base_table.domestic_rev, 0) as domestic_rev
             , coalesce(base_table.foreign_rev, 0) as foreign_rev
             , coalesce(round(base_table.domestic_rev / base_table.revenue, 4), 0) as domestic_pct
@@ -110,34 +124,34 @@ create table base_query as (
             on base_table.title = drafter.movie
         left join currently_updating
             on base_table.title = currently_updating.title
+        left join round_multiplier_overrides
+            on drafter.round = round_multiplier_overrides.round
+        left join movie_multiplier_overrides
+            on base_table.title = movie_multiplier_overrides.movie
     )
 
     , better_pick_calc as (
         select
-            picks.round
-            , picks.overall_pick
+            picks.overall_pick
             , picks.revenue
             , picks.multiplier
-            , count(better_picks.overall_pick) > 0 as better_pick_available
+            , count(distinct better_picks.title) > 0 as better_pick_available
             , case
                 when better_pick_available and picks.multiplier = 1
                     then max(better_picks.revenue)
-                when better_pick_available and picks.multiplier = 5
+                when better_pick_available and picks.multiplier != 1
                     then max(better_picks.scored_revenue)
                 else 0
             end as better_pick_scored_revenue
         from full_data as picks
         left join full_data as better_picks
-            on picks.revenue < better_picks.revenue
+            on picks.scored_revenue < better_picks.scored_revenue
             and picks.overall_pick < better_picks.overall_pick
+            and picks.drafted_by != better_picks.drafted_by
         where
-            better_picks.revenue > 0
-            and better_picks.scored_revenue > 0
+            better_picks.scored_revenue > 0
         group by
-            picks.round
-            , picks.overall_pick
-            , picks.revenue
-            , picks.multiplier
+            1, 2, 3
     )
 
     , better_pick_final as (

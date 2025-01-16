@@ -32,6 +32,12 @@ Each year must have the following:
     - List of movies that do not show up in the top 200 at the end of the year so they must be added manually.
     - This file must have at least 1 row, which can be an empty row if there are no manual adds.
     - Columns: title, revenue, domestic_rev, foreign_rev, release_date
+  - movie_multiplier_overrides.csv
+    - If you want, you can add a multiplier for each movie. These amounts will be multiplied by the revenue to determine the scored revenue.
+    - Columns: movie, multiplier
+  - round_multiplier_overrides.csv
+    - If you want, you can add a multiplier for each round. These amounts will be multiplied by the revenue to determine the scored revenue.
+    - Columns: round, multiplier
 - a google sheet named "**year** Fantasy Box Office Draft" with a tab called "Dashboard"
 - a variable in the .env file named GSPREAD_CREDENTIALS_**year**
   - Credentials for the google sheet that data will be written to for that year. [Here](https://docs.gspread.org/en/latest/oauth2.html#for-bots-using-service-account) is how to generate these credentials and add the account to the google sheet.

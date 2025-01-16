@@ -263,8 +263,8 @@ def apply_conditional_formatting(worksheet: Worksheet) -> None:
 
 def log_missing_movies(released_movies_df: DataFrame, year: int) -> None:
     draft_df = read_csv(f'assets/drafts/{year}/box_office_draft.csv')
-    released_movies = released_movies_df['Title'].tolist()
-    drafted_movies = draft_df['movie'].tolist()
+    released_movies = [str(movie) for movie in released_movies_df['Title'].tolist()]
+    drafted_movies = [str(movie) for movie in draft_df['movie'].tolist()]
     movies_missing_from_scoreboard = list(set(drafted_movies) - set(released_movies))
 
     if movies_missing_from_scoreboard:
