@@ -1,12 +1,13 @@
-import datetime
 import json
 import os
+from datetime import datetime
 from logging import getLogger
+from typing import List
 
-import gspread
 import gspread_formatting as gsf
-import pandas as pd
 from dotenv import load_dotenv
+from gspread import Worksheet, service_account_from_dict
+from pandas import DataFrame, read_csv
 
 from utils.db_connection import DuckDBConnection
 from utils.format import load_format_config
@@ -17,125 +18,131 @@ load_dotenv()
 logger = getLogger(__name__)
 
 
-def load(year: int) -> None:
-    released_movies_df = temp_table_to_df(
-        'base_query',
-        columns=[
-            'Rank',
-            'Title',
-            'Drafted By',
-            'Revenue',
-            'Scored Revenue',
-            'Round Drafted',
-            'Overall Pick',
-            'Multiplier',
-            'Domestic Revenue',
-            'Domestic Revenue %',
-            'Foreign Revenue',
-            'Foreign Revenue %',
-            'Better Pick',
-            'Better Pick Scored Revenue',
-            'First Seen Date',
-            'Still In Theaters',
-        ],
-    )
+class GoogleSheetDashboard:
+    def __init__(self, year: int):
+        self.year = year
 
-    scoreboard_df = temp_table_to_df(
-        'scoreboard',
-        columns=[
-            'Name',
-            'Scored Revenue',
-            '# Released',
-            '# Optimal Picks',
-            '% Optimal Picks',
-            'Unadjusted Revenue',
-        ],
-    )
+        self.released_movies_df = temp_table_to_df(
+            'base_query',
+            columns=[
+                'Rank',
+                'Title',
+                'Drafted By',
+                'Revenue',
+                'Scored Revenue',
+                'Round Drafted',
+                'Overall Pick',
+                'Multiplier',
+                'Domestic Revenue',
+                'Domestic Revenue %',
+                'Foreign Revenue',
+                'Foreign Revenue %',
+                'Better Pick',
+                'Better Pick Scored Revenue',
+                'First Seen Date',
+                'Still In Theaters',
+            ],
+        )
 
-    dashboard_elements = [
-        (
-            scoreboard_df,
-            'B4',
-            load_format_config('assets/scoreboard_format.json'),
-        ),
-        (
-            released_movies_df,
-            'I4',
-            load_format_config('assets/released_movies_format.json'),
-        ),
-    ]
+        self.scoreboard_df = temp_table_to_df(
+            'scoreboard',
+            columns=[
+                'Name',
+                'Scored Revenue',
+                '# Released',
+                '# Optimal Picks',
+                '% Optimal Picks',
+                'Unadjusted Revenue',
+            ],
+        )
 
-    worst_picks_df = temp_table_to_df(
-        'worst_picks',
-        columns=[
-            'Rank',
-            'Title',
-            'Drafted By',
-            'Overall Pick',
-            'Number of Better Picks',
-            'Missed Revenue',
-        ],
-    )
+        self.worst_picks_df = temp_table_to_df(
+            'worst_picks',
+            columns=[
+                'Rank',
+                'Title',
+                'Drafted By',
+                'Overall Pick',
+                'Number of Better Picks',
+                'Missed Revenue',
+            ],
+        )
 
-    add_worst_picks = (
-        len(released_movies_df) > len(scoreboard_df) + 3 and len(worst_picks_df) > 1
-    )
-
-    if add_worst_picks:
-        worst_picks_df_height = len(released_movies_df) - len(scoreboard_df) - 3
-
-        worst_picks_df = worst_picks_df.head(worst_picks_df_height)
-
-        dashboard_elements.append(
+        self.dashboard_elements = [
             (
-                worst_picks_df,
-                'B12',
-                load_format_config('assets/worst_picks_format.json'),
+                self.scoreboard_df,
+                'B4',
+                load_format_config('assets/scoreboard_format.json'),
+            ),
+            (
+                self.released_movies_df,
+                'I4',
+                load_format_config('assets/released_movies_format.json'),
+            ),
+        ]
+
+        self.add_worst_picks = (
+            len(self.released_movies_df) > len(self.scoreboard_df) + 3
+            and len(self.worst_picks_df) > 1
+        )
+
+        if self.add_worst_picks:
+            self.worst_picks_df_height = (
+                len(self.released_movies_df) - len(self.scoreboard_df) - 3
             )
+
+            self.worst_picks_df = self.worst_picks_df.head(self.worst_picks_df_height)
+
+            self.dashboard_elements.append(
+                (
+                    self.worst_picks_df,
+                    'B12',
+                    load_format_config('assets/worst_picks_format.json'),
+                )
+            )
+
+        self.setup_worksheet()
+
+    def setup_worksheet(self) -> None:
+        gspread_credentials_key = f'GSPREAD_CREDENTIALS_{self.year}'
+        gspread_credentials = os.getenv(gspread_credentials_key)
+        if gspread_credentials is not None:
+            credentials_dict = json.loads(gspread_credentials.replace('\n', '\\n'))
+            gc = service_account_from_dict(credentials_dict)
+        else:
+            raise ValueError(
+                f'{gspread_credentials_key} is not set or is invalid in the .env file.'
+            )
+
+        sh = gc.open(f'{self.year} Fantasy Box Office Draft')
+
+        worksheet_title = 'Dashboard'
+        worksheet = sh.worksheet(worksheet_title)
+
+        sh.del_worksheet(worksheet)
+        # 3 rows for title, 1 row for column titles, 1 row for footer
+        self.sheet_height = len(self.released_movies_df) + 5
+        worksheet = sh.add_worksheet(
+            title=worksheet_title, rows=self.sheet_height, cols=25, index=1
         )
+        self.worksheet = sh.worksheet(worksheet_title)
 
-    gspread_credentials_key = f'GSPREAD_CREDENTIALS_{year}'
-    gspread_credentials = os.getenv(gspread_credentials_key)
-    if gspread_credentials is not None:
-        credentials_dict = json.loads(gspread_credentials.replace('\n', '\\n'))
-        gc = gspread.service_account_from_dict(credentials_dict)
-    else:
-        raise ValueError(
-            f'{gspread_credentials_key} is not set or is invalid in the .env file.'
-        )
 
-    sh = gc.open(f'{year} Fantasy Box Office Draft')
-
-    worksheet_title = 'Dashboard'
-    worksheet = sh.worksheet(worksheet_title)
-
-    sh.del_worksheet(worksheet)
-    # 3 rows for title, 1 row for column titles, 1 row for footer
-    sheet_height = len(released_movies_df) + 5
-    worksheet = sh.add_worksheet(
-        title=worksheet_title, rows=sheet_height, cols=25, index=1
-    )
-    worksheet = sh.worksheet(worksheet_title)
-
-    # Adding each dashboard element
-    for element in dashboard_elements:
+def update_dashboard(gsheet_dashboard: GoogleSheetDashboard) -> None:
+    for element in gsheet_dashboard.dashboard_elements:
         df_to_sheet(
             df=element[0],
-            worksheet=worksheet,
+            worksheet=gsheet_dashboard.worksheet,
             location=element[1],
             format_dict=element[2] if len(element) > 2 else None,
         )
 
     # Adding last updated header
-    worksheet.update(
-        values=[
-            [
-                f'Last Updated UTC\n{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
-            ]
-        ],
+    gsheet_dashboard.worksheet.update(
+        values=[[f'Last Updated UTC\n{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}']],
         range_name='G2',
     )
-    worksheet.format(
+    gsheet_dashboard.worksheet.format(
         'G2',
         {
             'horizontalAlignment': 'CENTER',
@@ -143,10 +150,10 @@ def load(year: int) -> None:
     )
 
     # Columns are created with 12 point font, then auto resized and reduced to 10 point bold font
-    worksheet.columns_auto_resize(1, 7)
-    worksheet.columns_auto_resize(8, 23)
+    gsheet_dashboard.worksheet.columns_auto_resize(1, 7)
+    gsheet_dashboard.worksheet.columns_auto_resize(8, 23)
 
-    worksheet.format(
+    gsheet_dashboard.worksheet.format(
         'B4:G4',
         {
             'horizontalAlignment': 'CENTER',
@@ -156,8 +163,8 @@ def load(year: int) -> None:
             },
         },
     )
-    if add_worst_picks:
-        worksheet.format(
+    if gsheet_dashboard.add_worst_picks:
+        gsheet_dashboard.worksheet.format(
             'B12:G12',
             {
                 'horizontalAlignment': 'CENTER',
@@ -167,7 +174,7 @@ def load(year: int) -> None:
                 },
             },
         )
-    worksheet.format(
+    gsheet_dashboard.worksheet.format(
         'I4:X4',
         {
             'horizontalAlignment': 'CENTER',
@@ -178,58 +185,63 @@ def load(year: int) -> None:
         },
     )
 
-    for i in range(5, sheet_height):
-        if worksheet.acell(f'V{i}').value == '$0':
-            worksheet.update(values=[['']], range_name=f'V{i}')
+    for i in range(5, gsheet_dashboard.sheet_height):
+        if gsheet_dashboard.worksheet.acell(f'V{i}').value == '$0':
+            gsheet_dashboard.worksheet.update(values=[['']], range_name=f'V{i}')
 
     # resizing spacer columns
     spacer_columns = ['A', 'H', 'Y']
     for column in spacer_columns:
-        gsf.set_column_width(worksheet, column, 25)
+        gsf.set_column_width(gsheet_dashboard.worksheet, column, 25)
 
     # for some reason the auto resize still cuts off some of the title
     title_columns = ['J', 'U']
 
-    if add_worst_picks:
+    if gsheet_dashboard.add_worst_picks:
         title_columns.append('C')
 
     for column in title_columns:
-        gsf.set_column_width(worksheet, column, 284)
+        gsf.set_column_width(gsheet_dashboard.worksheet, column, 284)
 
     # revenue columns will also get cut off
     revenue_columns = ['L', 'M', 'R', 'S']
     for column in revenue_columns:
-        gsf.set_column_width(worksheet, column, 120)
+        gsf.set_column_width(gsheet_dashboard.worksheet, column, 120)
 
     # gets resized wrong and have to do it manually
-    gsf.set_column_width(worksheet, 'R', 142)
-    gsf.set_column_width(worksheet, 'W', 104)
-    gsf.set_column_width(worksheet, 'X', 106)
+    gsf.set_column_width(gsheet_dashboard.worksheet, 'R', 142)
+    gsf.set_column_width(gsheet_dashboard.worksheet, 'W', 104)
+    gsf.set_column_width(gsheet_dashboard.worksheet, 'X', 106)
 
-    # Adding titles
-    worksheet.update(values=[['Fantasy Box Office Standings']], range_name='B2')
-    worksheet.format(
+
+def update_titles(gsheet_dashboard: GoogleSheetDashboard) -> None:
+    gsheet_dashboard.worksheet.update(
+        values=[['Fantasy Box Office Standings']], range_name='B2'
+    )
+    gsheet_dashboard.worksheet.format(
         'B2',
         {'horizontalAlignment': 'CENTER', 'textFormat': {'fontSize': 20, 'bold': True}},
     )
-    worksheet.merge_cells('B2:F2')
-    worksheet.update(values=[['Released Movies']], range_name='I2')
-    worksheet.format(
+    gsheet_dashboard.worksheet.merge_cells('B2:F2')
+    gsheet_dashboard.worksheet.update(values=[['Released Movies']], range_name='I2')
+    gsheet_dashboard.worksheet.format(
         'I2',
         {'horizontalAlignment': 'CENTER', 'textFormat': {'fontSize': 20, 'bold': True}},
     )
-    worksheet.merge_cells('I2:X2')
+    gsheet_dashboard.worksheet.merge_cells('I2:X2')
 
-    if add_worst_picks:
-        worksheet.update(values=[['Worst Picks']], range_name='B11')
-        worksheet.format(
+    if gsheet_dashboard.add_worst_picks:
+        gsheet_dashboard.worksheet.update(values=[['Worst Picks']], range_name='B11')
+        gsheet_dashboard.worksheet.format(
             'B11',
             {'horizontalAlignment': 'CENTER', 'textFormat': {'bold': True}},
         )
-        worksheet.merge_cells('B11:G11')
+        gsheet_dashboard.worksheet.merge_cells('B11:G11')
 
+
+def apply_conditional_formatting(gsheet_dashboard: GoogleSheetDashboard) -> None:
     still_in_theater_rule = gsf.ConditionalFormatRule(
-        ranges=[gsf.GridRange.from_a1_range('X5:X', worksheet)],
+        ranges=[gsf.GridRange.from_a1_range('X5:X', gsheet_dashboard.worksheet)],
         booleanRule=gsf.BooleanRule(
             condition=gsf.BooleanCondition('TEXT_EQ', ['Yes']),
             format=gsf.CellFormat(
@@ -238,14 +250,18 @@ def load(year: int) -> None:
         ),
     )
 
-    rules = gsf.get_conditional_format_rules(worksheet)
+    rules = gsf.get_conditional_format_rules(gsheet_dashboard.worksheet)
     rules.append(still_in_theater_rule)
     rules.save()
 
     logger.info('Dashboard updated and formatted')
 
-    draft_df = pd.read_csv(f'assets/drafts/{year}/box_office_draft.csv')
-    released_movies = [str(movie) for movie in released_movies_df['Title'].tolist()]
+
+def log_missing_movies(gsheet_dashboard: GoogleSheetDashboard) -> None:
+    draft_df = read_csv(f'assets/drafts/{gsheet_dashboard.year}/box_office_draft.csv')
+    released_movies = [
+        str(movie) for movie in gsheet_dashboard.released_movies_df['Title'].tolist()
+    ]
     drafted_movies = [str(movie) for movie in draft_df['movie'].tolist()]
     movies_missing_from_scoreboard = list(set(drafted_movies) - set(released_movies))
 
@@ -257,20 +273,22 @@ def load(year: int) -> None:
     else:
         logger.info('All movies are on the scoreboard.')
 
+
+def log_min_revenue_info(gsheet_dashboard: GoogleSheetDashboard) -> None:
     duckdb_con = DuckDBConnection()
 
     min_revenue_of_most_recent_data = duckdb_con.sql(
         f'''
         with most_recent_data as (
             select title, revenue
-            from s3_dump where year_part = {year}
+            from s3_dump where year_part = {gsheet_dashboard.year}
             qualify rank() over (order by loaded_date desc) = 1
             order by 2 desc
         )
 
         select title, revenue
         from most_recent_data qualify row_number() over (order by revenue asc) = 1;
-    '''
+        '''
     ).fetchnumpy()['revenue'][0]
 
     logger.info(
@@ -280,18 +298,18 @@ def load(year: int) -> None:
     movies_under_min_revenue = (
         duckdb_con.sql(
             f'''
-        with raw_data as (
-            select title, revenue
-            from s3_dump
-            where year_part = {year}
-            qualify row_number() over (partition by title order by loaded_date desc) = 1
-        )
+            with raw_data as (
+                select title, revenue
+                from s3_dump
+                where year_part = {gsheet_dashboard.year}
+                qualify row_number() over (partition by title order by loaded_date desc) = 1
+            )
 
-        select raw_data.title from raw_data
-        inner join base_query
-            on raw_data.title = base_query.title
-        where raw_data.revenue <= {min_revenue_of_most_recent_data}
-    '''
+            select raw_data.title from raw_data
+            inner join base_query
+                on raw_data.title = base_query.title
+            where raw_data.revenue <= {min_revenue_of_most_recent_data}
+            '''
         )
         .fetchnumpy()['title']
         .tolist()
@@ -299,10 +317,21 @@ def load(year: int) -> None:
 
     if movies_under_min_revenue:
         logger.info(
-            'The most recent records for the following movies are under the minimum revenue of the most recent data pull, may not have the correct revenue and should be added to the manual_adds.csv file:'
+            'The most recent records for the following movies are under the minimum revenue of the most recent data pull'
+            + ' and may not have the correct revenue and should be added to the manual_adds.csv file:'
         )
         logger.info(', '.join(sorted(movies_under_min_revenue)))
     else:
         logger.info(
             'All movies are above the minimum revenue of the most recent data pull.'
         )
+
+
+def load(year: int) -> None:
+    gsheet_dashboard = GoogleSheetDashboard(year)
+
+    update_dashboard(gsheet_dashboard)
+    update_titles(gsheet_dashboard)
+    apply_conditional_formatting(gsheet_dashboard)
+    log_missing_movies(gsheet_dashboard)
+    log_min_revenue_info(gsheet_dashboard)
