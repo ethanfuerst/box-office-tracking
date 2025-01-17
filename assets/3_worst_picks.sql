@@ -1,15 +1,5 @@
 create or replace table worst_picks as (
-    with base_query_cte as (
-        select
-            title
-            , drafted_by
-            , overall_pick
-            , scored_revenue
-            , multiplier
-        from base_query
-    )
-
-    , better_picks as (
+    with better_picks as (
         select
             title
             , count(distinct better_pick_title) as number_of_better_picks
@@ -24,17 +14,17 @@ create or replace table worst_picks as (
                 over (
                     order by
                         better_picks.number_of_better_picks desc
-                        , base_query_cte.overall_pick asc
+                        , base_query.overall_pick asc
                 )
                 as rank
-            , base_query_cte.title
-            , base_query_cte.drafted_by
-            , base_query_cte.overall_pick
+            , base_query.title
+            , base_query.drafted_by
+            , base_query.overall_pick
             , better_picks.number_of_better_picks
             , better_picks.max_better_pick_revenue as missed_revenue
-        from base_query_cte
+        from base_query
         inner join better_picks
-            on base_query_cte.title = better_picks.title
+            on base_query.title = better_picks.title
         where better_picks.number_of_better_picks > 0
     )
 

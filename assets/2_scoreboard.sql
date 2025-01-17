@@ -14,6 +14,7 @@ create or replace table scoreboard as (
         ) as correct_pick_pct
         , sum(revenue) as unadjusted_revenue
     from base_query
+    where drafted_by is not null
     group by
         1
     order by
