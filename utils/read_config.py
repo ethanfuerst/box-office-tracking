@@ -55,7 +55,6 @@ def load_override_tables(config: Dict) -> None:
 
 def get_config_for_id(id: str) -> Dict:
     config = get_top_level_config()['dashboards'][id]
-    print(config)
 
     load_override_tables(config)
 
