@@ -30,7 +30,9 @@ create or replace table worst_picks as (
 
     select
         row_number() over (
-            order by missed_revenue desc
+            order by
+                missed_revenue desc
+                , number_of_better_picks desc
         ) as rank
         , title
         , drafted_by
