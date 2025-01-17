@@ -64,7 +64,7 @@ def extract(config: Dict) -> None:
             duckdb_con.execute("CREATE OR REPLACE TABLE all_data AS SELECT * FROM df")
             logger.info('DataFrame loaded into DuckDB table all_data.')
 
-            duckdb_con.execute(  # errors with columns here
+            duckdb_con.execute(
                 f'''
                 create or replace table box_office_mojo_dump as (
                     select
