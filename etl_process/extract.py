@@ -10,10 +10,10 @@ S3_DATE_FORMAT = '%Y%m%d'
 logger = getLogger(__name__)
 
 
-def extract(config: Dict, id: str) -> None:
-    duckdb_con = DuckDBConnection(config, id)
+def extract(config: Dict) -> None:
+    duckdb_con = DuckDBConnection(config)
 
-    if config['dashboards'][id]['update_type'] == 's3':
+    if config['update_type'] == 's3':
         bucket = os.getenv('BUCKET')
 
         duckdb_con.execute(

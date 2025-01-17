@@ -6,9 +6,9 @@ from utils.db_connection import DuckDBConnection
 
 
 def temp_table_to_df(
-    config: Dict, id: str, table: str, columns: Optional[List[str]] = None
+    config: Dict, table: str, columns: Optional[List[str]] = None
 ) -> DataFrame:
-    duckdb_con = DuckDBConnection(config, id)
+    duckdb_con = DuckDBConnection(config)
 
     df = duckdb_con.query(f'select * from {table}').df()
 

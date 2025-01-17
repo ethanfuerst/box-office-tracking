@@ -6,7 +6,7 @@ import yaml
 from utils.db_connection import DuckDBConnection
 
 
-def read_config() -> Dict:
+def get_top_level_config() -> Dict:
     with open('config/config.yml', 'r') as yaml_in:
         yaml_object = yaml.safe_load(yaml_in)
 
@@ -14,16 +14,16 @@ def read_config() -> Dict:
 
 
 def get_all_ids_from_config() -> List[str]:
-    config = read_config()
+    config = get_top_level_config()
 
     return list(config['dashboards'].keys())
 
 
-def load_override_tables(config: Dict, id: str) -> None:
-    movie_overrides = config['dashboards'][id]['movie_multiplier_overrides']
-    round_overrides = config['dashboards'][id]['round_multiplier_overrides']
+def load_override_tables(config: Dict) -> None:
+    movie_overrides = config.get('movie_multiplier_overrides', [])
+    round_overrides = config.get('round_multiplier_overrides', [])
 
-    duckdb_con = DuckDBConnection(config, id)
+    duckdb_con = DuckDBConnection(config)
 
     duckdb_con.execute(
         '''
@@ -53,14 +53,10 @@ def load_override_tables(config: Dict, id: str) -> None:
     duckdb_con.close()
 
 
-def get_config(id: str) -> Dict:
-    config = read_config()
+def get_config_for_id(id: str) -> Dict:
+    config = get_top_level_config()['dashboards'][id]
+    print(config)
 
-    if config['dashboards'][id] is None:
-        raise ValueError(
-            f'Config ID {id} does not match config file {config["dashboards"]}'
-        )
-
-    load_override_tables(config, id)
+    load_override_tables(config)
 
     return config

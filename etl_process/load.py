@@ -19,13 +19,11 @@ logger = getLogger(__name__)
 
 
 class GoogleSheetDashboard:
-    def __init__(self, config: Dict, id: str):
-        self.year = config['dashboards'][id]['year']
-        self.id = id
-
+    def __init__(self, config: Dict):
+        self.year = config['year']
+        self.folder_name = config['folder_name']
         self.released_movies_df = temp_table_to_df(
             config,
-            id,
             'base_query',
             columns=[
                 'Rank',
@@ -49,7 +47,6 @@ class GoogleSheetDashboard:
 
         self.scoreboard_df = temp_table_to_df(
             config,
-            id,
             'scoreboard',
             columns=[
                 'Name',
@@ -63,7 +60,6 @@ class GoogleSheetDashboard:
 
         self.worst_picks_df = temp_table_to_df(
             config,
-            id,
             'worst_picks',
             columns=[
                 'Rank',
@@ -277,7 +273,9 @@ def apply_conditional_formatting(gsheet_dashboard: GoogleSheetDashboard) -> None
 
 
 def log_missing_movies(gsheet_dashboard: GoogleSheetDashboard) -> None:
-    draft_df = read_csv(f'assets/drafts/{gsheet_dashboard.id}/box_office_draft.csv')
+    draft_df = read_csv(
+        f'assets/drafts/{gsheet_dashboard.folder_name}/box_office_draft.csv'
+    )
     released_movies = [
         str(movie) for movie in gsheet_dashboard.released_movies_df['Title'].tolist()
     ]
@@ -293,10 +291,8 @@ def log_missing_movies(gsheet_dashboard: GoogleSheetDashboard) -> None:
         logger.info('All movies are on the scoreboard.')
 
 
-def log_min_revenue_info(
-    gsheet_dashboard: GoogleSheetDashboard, config: Dict, id: str
-) -> None:
-    duckdb_con = DuckDBConnection(config, id)
+def log_min_revenue_info(gsheet_dashboard: GoogleSheetDashboard, config: Dict) -> None:
+    duckdb_con = DuckDBConnection(config)
 
     min_revenue_of_most_recent_data = duckdb_con.query(
         f'''
@@ -350,11 +346,11 @@ def log_min_revenue_info(
         )
 
 
-def load(config: Dict, id: str) -> None:
-    gsheet_dashboard = GoogleSheetDashboard(config, id)
+def load(config: Dict) -> None:
+    gsheet_dashboard = GoogleSheetDashboard(config)
 
     update_dashboard(gsheet_dashboard)
     update_titles(gsheet_dashboard)
     apply_conditional_formatting(gsheet_dashboard)
     log_missing_movies(gsheet_dashboard)
-    log_min_revenue_info(gsheet_dashboard, config, id)
+    log_min_revenue_info(gsheet_dashboard, config)

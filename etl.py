@@ -10,7 +10,7 @@ from etl_process.transform import transform
 from utils.check_config_files import config_files_exist
 from utils.db_connection import DuckDBConnection
 from utils.logging_config import setup_logging
-from utils.read_config import get_all_ids_from_config, read_config
+from utils.read_config import get_all_ids_from_config, get_config_for_id
 
 setup_logging()
 
@@ -39,20 +39,21 @@ def etl(ids: List[str] = DEFAULT_IDS, dry_run: bool = False):
     logger.info(f'Starting ETL process for ids: {", ".join(map(str, ids))}.')
 
     for id in ids:
-        config = read_config()
+        config = get_config_for_id(id=id)
 
-        if not config_files_exist(config, id):
+        if not config_files_exist(config):
             logger.warning(f'Config files for {id} do not exist. Skipping.')
             continue
 
-        duckdb_con = DuckDBConnection(config, id)
+        duckdb_con = DuckDBConnection(config)
 
-        extract(config=config, id=id)
-        transform(config=config, id=id)
+        extract(config=config)
+        transform(config=config)
+        logger.info(f'All sql scripts have been executed for {id}.')
 
         if not dry_run:
             logger.info(f'Loading data for {id}.')
-            load(config=config, id=id)
+            load(config=config)
 
         logger.info(f'Completed ETL process for {id}.')
 
