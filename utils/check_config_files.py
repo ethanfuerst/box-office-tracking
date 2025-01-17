@@ -2,6 +2,7 @@ import os
 from logging import getLogger
 from typing import Dict
 
+import lxml
 import pandas as pd
 
 from utils.logging_config import setup_logging
@@ -20,7 +21,6 @@ def config_files_exist(config: Dict) -> bool:
     REQUIRED_ENV_VARS = [
         'MODAL_TOKEN_ID',
         'MODAL_TOKEN_SECRET',
-        'BUCKET',
         config['gspread_credentials_name'],
         config.get('s3_access_key_id_var_name', 'S3_ACCESS_KEY_ID'),
         config.get('s3_secret_access_key_var_name', 'S3_SECRET_ACCESS_KEY'),
