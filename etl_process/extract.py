@@ -60,6 +60,8 @@ def extract(config: Dict) -> None:
                 f'https://www.boxofficemojo.com/year/world/{config["year"]}'
             )[0]
 
+            logger.info(f'Read {len(df)} rows with scrape from Box Office Mojo')
+
             duckdb_con.connection.register('df', df)
             duckdb_con.execute("CREATE OR REPLACE TABLE all_data AS SELECT * FROM df")
             logger.info('DataFrame loaded into DuckDB table all_data.')
