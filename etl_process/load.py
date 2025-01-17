@@ -2,7 +2,7 @@ import json
 import os
 from datetime import datetime
 from logging import getLogger
-from typing import List
+from typing import Dict, List, Optional
 
 import gspread_formatting as gsf
 from dotenv import load_dotenv
@@ -19,10 +19,13 @@ logger = getLogger(__name__)
 
 
 class GoogleSheetDashboard:
-    def __init__(self, year: int):
-        self.year = year
+    def __init__(self, config: Dict, id: str):
+        self.year = config['dashboards'][id]['year']
+        self.id = id
 
         self.released_movies_df = temp_table_to_df(
+            config,
+            id,
             'base_query',
             columns=[
                 'Rank',
@@ -45,6 +48,8 @@ class GoogleSheetDashboard:
         )
 
         self.scoreboard_df = temp_table_to_df(
+            config,
+            id,
             'scoreboard',
             columns=[
                 'Name',
@@ -57,6 +62,8 @@ class GoogleSheetDashboard:
         )
 
         self.worst_picks_df = temp_table_to_df(
+            config,
+            id,
             'worst_picks',
             columns=[
                 'Rank',
@@ -137,9 +144,18 @@ def update_dashboard(gsheet_dashboard: GoogleSheetDashboard) -> None:
             format_dict=element[2] if len(element) > 2 else None,
         )
 
+    dashboard_done_updating = (
+        gsheet_dashboard.released_movies_df['Still In Theaters'].eq('No').all()
+    )
+
+    log_string = f'Last Updated UTC\n{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+
+    if dashboard_done_updating:
+        log_string += '\nDashboard is done updating\nand can be removed from the etl'
+
     # Adding last updated header
     gsheet_dashboard.worksheet.update(
-        values=[[f'Last Updated UTC\n{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}']],
+        values=[[log_string]],
         range_name='G2',
     )
     gsheet_dashboard.worksheet.format(
@@ -213,6 +229,9 @@ def update_dashboard(gsheet_dashboard: GoogleSheetDashboard) -> None:
     gsf.set_column_width(gsheet_dashboard.worksheet, 'W', 104)
     gsf.set_column_width(gsheet_dashboard.worksheet, 'X', 106)
 
+    if dashboard_done_updating:
+        gsf.set_column_width(gsheet_dashboard.worksheet, 'C', 174)
+
 
 def update_titles(gsheet_dashboard: GoogleSheetDashboard) -> None:
     gsheet_dashboard.worksheet.update(
@@ -258,7 +277,7 @@ def apply_conditional_formatting(gsheet_dashboard: GoogleSheetDashboard) -> None
 
 
 def log_missing_movies(gsheet_dashboard: GoogleSheetDashboard) -> None:
-    draft_df = read_csv(f'assets/drafts/{gsheet_dashboard.year}/box_office_draft.csv')
+    draft_df = read_csv(f'assets/drafts/{gsheet_dashboard.id}/box_office_draft.csv')
     released_movies = [
         str(movie) for movie in gsheet_dashboard.released_movies_df['Title'].tolist()
     ]
@@ -274,10 +293,12 @@ def log_missing_movies(gsheet_dashboard: GoogleSheetDashboard) -> None:
         logger.info('All movies are on the scoreboard.')
 
 
-def log_min_revenue_info(gsheet_dashboard: GoogleSheetDashboard) -> None:
-    duckdb_con = DuckDBConnection()
+def log_min_revenue_info(
+    gsheet_dashboard: GoogleSheetDashboard, config: Dict, id: str
+) -> None:
+    duckdb_con = DuckDBConnection(config, id)
 
-    min_revenue_of_most_recent_data = duckdb_con.sql(
+    min_revenue_of_most_recent_data = duckdb_con.query(
         f'''
         with most_recent_data as (
             select title, revenue
@@ -296,7 +317,7 @@ def log_min_revenue_info(gsheet_dashboard: GoogleSheetDashboard) -> None:
     )
 
     movies_under_min_revenue = (
-        duckdb_con.sql(
+        duckdb_con.query(
             f'''
             with raw_data as (
                 select title, revenue
@@ -315,6 +336,8 @@ def log_min_revenue_info(gsheet_dashboard: GoogleSheetDashboard) -> None:
         .tolist()
     )
 
+    duckdb_con.close()
+
     if movies_under_min_revenue:
         logger.info(
             'The most recent records for the following movies are under the minimum revenue of the most recent data pull'
@@ -327,11 +350,11 @@ def log_min_revenue_info(gsheet_dashboard: GoogleSheetDashboard) -> None:
         )
 
 
-def load(year: int) -> None:
-    gsheet_dashboard = GoogleSheetDashboard(year)
+def load(config: Dict, id: str) -> None:
+    gsheet_dashboard = GoogleSheetDashboard(config, id)
 
     update_dashboard(gsheet_dashboard)
     update_titles(gsheet_dashboard)
     apply_conditional_formatting(gsheet_dashboard)
     log_missing_movies(gsheet_dashboard)
-    log_min_revenue_info(gsheet_dashboard)
+    log_min_revenue_info(gsheet_dashboard, config, id)
