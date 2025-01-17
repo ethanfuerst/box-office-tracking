@@ -137,9 +137,18 @@ def update_dashboard(gsheet_dashboard: GoogleSheetDashboard) -> None:
             format_dict=element[2] if len(element) > 2 else None,
         )
 
+    dashboard_done_updating = (
+        gsheet_dashboard.released_movies_df['Still In Theaters'].eq('No').all()
+    )
+
+    log_string = f'Last Updated UTC\n{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+
+    if dashboard_done_updating:
+        log_string += '\nDashboard is done updating\nand can be removed from the etl'
+
     # Adding last updated header
     gsheet_dashboard.worksheet.update(
-        values=[[f'Last Updated UTC\n{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}']],
+        values=[[log_string]],
         range_name='G2',
     )
     gsheet_dashboard.worksheet.format(
@@ -212,6 +221,9 @@ def update_dashboard(gsheet_dashboard: GoogleSheetDashboard) -> None:
     gsf.set_column_width(gsheet_dashboard.worksheet, 'R', 142)
     gsf.set_column_width(gsheet_dashboard.worksheet, 'W', 104)
     gsf.set_column_width(gsheet_dashboard.worksheet, 'X', 106)
+
+    if dashboard_done_updating:
+        gsf.set_column_width(gsheet_dashboard.worksheet, 'C', 174)
 
 
 def update_titles(gsheet_dashboard: GoogleSheetDashboard) -> None:
