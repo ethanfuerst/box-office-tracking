@@ -13,7 +13,7 @@ In this example, I drafted with 4 friends. We did a snake draft, and we each pic
 There's 3 main sections of the dashboard:
 
 - Standings
-  - On the top left, each drafter's name is listed with their scored revenue, as well as the number of movies that they drafted that have been released. There's also a column to show how many picks they chose that were optimal, which is a pick that was better than any movie avaiable at the time of that pick.
+  - On the top left, each drafter's name is listed with their scored revenue, as well as the number of movies that they drafted that have been released. There's also a column to show how many picks they chose that were optimal, which is a pick that was better than any movie available at the time of that pick.
 - Released Movies
   - Every movie that has been drafted or is listed in manual_adds.csv is listed here.
   - The movies are sorted by scored revenue.
@@ -23,9 +23,9 @@ There's 3 main sections of the dashboard:
 
 Throughout the year, I make sure that each movie has the correct title in the box_office_draft.csv file. Each movie will only be picked up if it's in the top 200 on the Box Office Mojo Worldwide page.
 
-The way I originally set this up was to scrape the box office data from the Box Office Mojo page each day and store it in an s3 bucket. Then I would read the data from the s3 bucket and load it in to the google sheet. This is more accurate because it's possible for a smaller movie to show up in the top 200 at one point in time, but then drop out of the top 200 by the end of the year as larger movies get released. I have some logging in the code to record these movies that may have missed revenue.
+The way I originally set this up was to scrape the box office data from the Box Office Mojo page each day and store it in an S3 bucket. Then I would read the data from the S3 bucket and load it in to the google sheet. This is more accurate because it's possible for a smaller movie to show up in the top 200 at one point in time, but then drop out of the top 200 by the end of the year as larger movies get released. I have some logging in the code to record these movies that may have missed revenue.
 
-If you want to do a smaller draft, you can choose for a draft to pull from the Box Office Mojo page each time the dashboard is updated. This is easier to set up, but it's not as accurate as the s3 method.
+If you want to do a smaller draft, you can choose for a draft to pull from the Box Office Mojo page each time the dashboard is updated. This is easier to set up, but it's not as accurate as the S3 method.
 
 ---
 
@@ -40,9 +40,9 @@ To run this on your own, you will need:
    - **update_type**
      - Can be "scrape" or "s3"
      - "scrape" will scrape the box office data from [Box Office Mojo](https://www.boxofficemojo.com/year/world/)
-       - This is the easiest way to run this as it doesn't require setting up a s3 bucket.
-     - "s3" will assume the box office data is already in an s3 bucket and will load it into duckdb (more on that below)
-       - This method is a more accurate than the scrape method and but requrires setting up a s3 bucket.
+       - This is the easiest way to run this as it doesn't require setting up a S3 bucket.
+     - "s3" will assume the box office data is already in an S3 bucket and will load it into duckdb (more on that below)
+       - This method is a more accurate than the scrape method and but requires setting up a S3 bucket.
    - **sheet_name**
      - Name of the google sheet that the dashboard will be written to.
    - **folder_name**
@@ -75,11 +75,11 @@ For each id in your config.yml file, you will need the following:
     - Columns: title, revenue, domestic_rev, foreign_rev, release_date
 If your id is set to scrape, your config.yml file will also need the following:
 - **S3_ACCESS_KEY_ID** and **S3_SECRET_ACCESS_KEY**
-  - Access key id and secret access key for the s3 bucket that contains the box office data.
+  - Access key id and secret access key for the S3 bucket that contains the box office data.
 - **BUCKET**
-  - Name of the s3 bucket (and path, if applicable) that contains the box office data.
+  - Name of the S3 bucket (and path, if applicable) that contains the box office data.
   - The files must be named in the format boxofficemojo_YYYYMMDD.parquet, where YYYYMMDD is the date the data was scraped.
-and you will need an s3 bucket with the following files:
+and you will need an S3 bucket with the following files:
 - boxofficemojo_YYYYMMDD.parquet
   - Contains the box office data for the year scraped from [Box Office Mojo](https://www.boxofficemojo.com/year/world/) on YYYYMMDD with the following columns:
     - "Release Group"
@@ -106,7 +106,7 @@ dashboards:
       - round: 20
         multiplier: 5
     gspread_credentials_name: GSPREAD_CREDENTIALS_FRIENDS_2025 # if you want to specify the name of the gspread credentials variable, defaults to GSPREAD_CREDENTIALS_<year>
-    bucket: box-office-tracking # only needed if update_type is s3
+    bucket: box-office-tracking # only needed if update_type is S3
     s3_access_key_id_var_name: S3_ACCESS_KEY_ID_MY_2025_DRAFT # only needed if update_type is s3
     s3_secret_access_key_var_name: S3_SECRET_ACCESS_KEY_MY_2025_DRAFT # only needed if update_type is s3
 ```
