@@ -23,6 +23,7 @@ modal_image = modal.Image.debian_slim(python_version='3.10').poetry_install_from
 )
 
 DEFAULT_IDS = get_all_ids_from_config()
+CONFIG_MOUNT = modal.Mount.from_local_dir('config/', remote_path='/root/config')
 
 
 @app.function(
@@ -34,9 +35,7 @@ DEFAULT_IDS = get_all_ids_from_config()
         backoff_coefficient=1.0,
         initial_delay=60.0,
     ),
-    mounts=[
-        modal.Mount.from_local_dir('config/', remote_path='/root/config'),
-    ],
+    mounts=[CONFIG_MOUNT],
 )
 def s3_sync(ids: List[str] = DEFAULT_IDS):
     all_configs = [get_config_for_id(id=id) for id in ids]
@@ -75,7 +74,7 @@ def s3_sync(ids: List[str] = DEFAULT_IDS):
     ),
     mounts=[
         modal.Mount.from_local_dir('assets/', remote_path='/root/assets'),
-        modal.Mount.from_local_dir('config/', remote_path='/root/config'),
+        CONFIG_MOUNT,
     ],
 )
 def update_dashboards(ids: List[str] = DEFAULT_IDS, dry_run: bool = False):
