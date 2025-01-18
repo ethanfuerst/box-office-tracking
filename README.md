@@ -67,10 +67,10 @@ For each ID in your `config.yml` file, you will also need:
 - A corresponding folder (specified in the `folder_name` key in the `config.yml` file) in `assets/` with the following files:
   - `box_office_draft.csv`
     - Source of truth for the box office draft.
-    - Columns: round, overall, name, movie
+    - **Columns:** round, overall, name, movie
   - `manual_adds.csv`
     - List of movies that do not show up in the top 200 at the end of the year so they must be added manually.
-    - Columns: title, revenue, domestic_rev, foreign_rev, release_date
+    - **Columns:** title, revenue, domestic_rev, foreign_rev, release_date
 
 If your `update_type` is `S3`, you will need an S3 bucket with the following files:
 
