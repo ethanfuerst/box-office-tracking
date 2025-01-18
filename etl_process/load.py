@@ -155,6 +155,7 @@ def update_dashboard(gsheet_dashboard: GoogleSheetDashboard) -> None:
         values=[[log_string]],
         range_name='G2',
     )
+
     gsheet_dashboard.worksheet.format(
         'G2',
         {
@@ -176,6 +177,7 @@ def update_dashboard(gsheet_dashboard: GoogleSheetDashboard) -> None:
             },
         },
     )
+
     if gsheet_dashboard.add_worst_picks:
         gsheet_dashboard.worksheet.format(
             'B12:G12',
@@ -187,6 +189,7 @@ def update_dashboard(gsheet_dashboard: GoogleSheetDashboard) -> None:
                 },
             },
         )
+
     gsheet_dashboard.worksheet.format(
         'I4:X4',
         {
