@@ -1,14 +1,14 @@
 [tool.poetry]
 name = "box-office-tracking"
 version = "0.1.0"
-description = ""
+description = "Tracking a box office draft with data from Box Office Mojo."
 authors = ["Ethan Fuerst"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
 gspread = "^5.12.4"
-pandas = "^2.1.4"
+pandas = "^2.2.0"
 gspread-formatting = "^1.1.2"
 duckdb = "^1.1.3"
 modal = "^0.64.52"

@@ -26,4 +26,4 @@ jobs:
           pip install poetry && poetry install --no-root
 
       - name: Deploy Application
-        run: poetry run modal deploy etl.py
+        run: poetry run modal deploy sync_and_update.py

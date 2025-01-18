@@ -1,10 +1,11 @@
 import glob
-from logging import getLogger
+import logging
 from typing import Dict
 
-from utils.db_connection import DuckDBConnection
+from utils.logging_config import setup_logging
 
-logger = getLogger(__name__)
+setup_logging()
+from utils.db_connection import DuckDBConnection
 
 
 def transform(config: Dict) -> None:
@@ -20,6 +21,6 @@ def transform(config: Dict) -> None:
 
         duckdb_con.execute(sql_content)
 
-        logger.info(f'Executed {sql_file}')
+        logging.info(f'Executed {sql_file}')
 
     duckdb_con.close()

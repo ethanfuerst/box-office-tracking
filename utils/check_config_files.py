@@ -1,5 +1,5 @@
+import logging
 import os
-from logging import getLogger
 from typing import Dict
 
 import lxml
@@ -8,8 +8,6 @@ import pandas as pd
 from utils.logging_config import setup_logging
 
 setup_logging()
-
-logger = getLogger(__name__)
 
 CONFIG_FILES = [
     'assets/drafts/{folder_name}/box_office_draft.csv',
@@ -36,25 +34,25 @@ def validate_config(config: Dict) -> bool:
 
     for tag in REQUIRED_TAGS:
         if tag not in config:
-            logger.warning(f'Missing required config tag: {tag}')
+            logging.warning(f'Missing required config tag: {tag}')
             return False
 
     for var in REQUIRED_ENV_VARS:
         if os.getenv(var) is None:
-            logger.warning(f'{var} is not set in the .env file.')
+            logging.warning(f'{var} is not set in the .env file.')
             return False
 
     for config_file in CONFIG_FILES:
         config_file_path = config_file.format(folder_name=config['folder_name'])
 
         if not os.path.exists(config_file_path):
-            logger.warning(f'{config_file_path} does not exist.')
+            logging.warning(f'{config_file_path} does not exist.')
             return False
 
         if 'box_office_draft.csv' in config_file:
             box_office_draft_df = pd.read_csv(config_file_path)
             if box_office_draft_df.empty:
-                logger.warning(f'{config_file_path} does not contain any rows.')
+                logging.warning(f'{config_file_path} does not contain any rows.')
                 return False
 
     return True

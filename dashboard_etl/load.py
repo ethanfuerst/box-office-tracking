@@ -1,7 +1,7 @@
 import json
+import logging
 import os
 from datetime import datetime
-from logging import getLogger
 from typing import Dict, List, Optional
 
 import gspread_formatting as gsf
@@ -12,10 +12,12 @@ from pandas import DataFrame, read_csv
 from utils.db_connection import DuckDBConnection
 from utils.format import load_format_config
 from utils.gspread_format import df_to_sheet
+from utils.logging_config import setup_logging
 from utils.query import temp_table_to_df
 
+setup_logging()
+
 load_dotenv()
-logger = getLogger(__name__)
 
 
 class GoogleSheetDashboard:
@@ -275,7 +277,7 @@ def apply_conditional_formatting(gsheet_dashboard: GoogleSheetDashboard) -> None
     rules.append(still_in_theater_rule)
     rules.save()
 
-    logger.info('Dashboard updated and formatted')
+    logging.info('Dashboard updated and formatted')
 
 
 def log_missing_movies(gsheet_dashboard: GoogleSheetDashboard) -> None:
@@ -289,12 +291,12 @@ def log_missing_movies(gsheet_dashboard: GoogleSheetDashboard) -> None:
     movies_missing_from_scoreboard = list(set(drafted_movies) - set(released_movies))
 
     if movies_missing_from_scoreboard:
-        logger.info(
+        logging.info(
             'The following movies are missing from the scoreboard and should be added to the manual_adds.csv file:'
         )
-        logger.info(', '.join(sorted(movies_missing_from_scoreboard)))
+        logging.info(', '.join(sorted(movies_missing_from_scoreboard)))
     else:
-        logger.info('All movies are on the scoreboard.')
+        logging.info('All movies are on the scoreboard.')
 
 
 def log_min_revenue_info(gsheet_dashboard: GoogleSheetDashboard, config: Dict) -> None:
@@ -314,7 +316,7 @@ def log_min_revenue_info(gsheet_dashboard: GoogleSheetDashboard, config: Dict) -
         '''
     ).fetchnumpy()['revenue'][0]
 
-    logger.info(
+    logging.info(
         f'Minimum revenue of most recent data: {min_revenue_of_most_recent_data}'
     )
 
@@ -341,13 +343,13 @@ def log_min_revenue_info(gsheet_dashboard: GoogleSheetDashboard, config: Dict) -
     duckdb_con.close()
 
     if movies_under_min_revenue:
-        logger.info(
+        logging.info(
             'The most recent records for the following movies are under the minimum revenue of the most recent data pull'
             + ' and may not have the correct revenue and should be added to the manual_adds.csv file:'
         )
-        logger.info(', '.join(sorted(movies_under_min_revenue)))
+        logging.info(', '.join(sorted(movies_under_min_revenue)))
     else:
-        logger.info(
+        logging.info(
             'All movies are above the minimum revenue of the most recent data pull.'
         )
 

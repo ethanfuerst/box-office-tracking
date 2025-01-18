@@ -53,8 +53,10 @@ Optional keys include:
   - **Key:** `multiplier`
 - `gspread_credentials_name`: Name of the gspread credentials variable in the `.env` file. Defaults to `GSPREAD_CREDENTIALS_<year>`.
 - `bucket`: Name of the S3 bucket (and path, if applicable) that contains the box office data. Only needed if `update_type` is `S3`.
-- `s3_access_key_id_var_name`: Name of the S3 access key id variable in the `.env` file. Only needed if `update_type` is `S3`. Defaults to `S3_ACCESS_KEY_ID`.
-- `s3_secret_access_key_var_name`: Name of the S3 secret access key variable in the `.env` file. Only needed if `update_type` is `S3`. Defaults to `S3_SECRET_ACCESS_KEY`.
+- `s3_access_key_id_var_name`: Name of the S3 access key id variable in the `.env` file. Only needed if `update_type` is `S3`. Defaults to `S3_ACCESS_KEY_ID`. This access_key must have read access to the bucket.
+- `s3_secret_access_key_var_name`: Name of the S3 secret access key variable in the `.env` file. Only needed if `update_type` is `S3`. Defaults to `S3_SECRET_ACCESS_KEY`. This secret_key must have read access to the bucket.
+- `BOX_OFFICE_TRACKING_S3_ACCESS_KEY_ID`: Name of the S3 access key id variable in the `.env` file. Only needed if `update_type` is `S3`. This access_key must have write access to the bucket.
+- `BOX_OFFICE_TRACKING_S3_SECRET_ACCESS_KEY`: Name of the S3 secret access key variable in the `.env` file. Only needed if `update_type` is `S3`. This secret_key must have write access to the bucket.
 
 For each ID in your `config.yml` file, you will also need:
 
