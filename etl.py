@@ -7,7 +7,7 @@ import modal
 from etl_process.extract import extract
 from etl_process.load import load
 from etl_process.transform import transform
-from utils.check_config_files import config_files_exist
+from utils.check_config_files import validate_config
 from utils.db_connection import DuckDBConnection
 from utils.logging_config import setup_logging
 from utils.read_config import get_all_ids_from_config, get_config_for_id
@@ -41,8 +41,10 @@ def etl(ids: List[str] = DEFAULT_IDS, dry_run: bool = False):
     for id in ids:
         config = get_config_for_id(id=id)
 
-        if not config_files_exist(config):
-            logger.warning(f'Config files for {id} do not exist. Skipping.')
+        if not validate_config(config):
+            logger.warning(
+                f'Config files or env vars for {id} are not configured correctly. Skipping.'
+            )
             continue
 
         duckdb_con = DuckDBConnection(config)

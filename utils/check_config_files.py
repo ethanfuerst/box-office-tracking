@@ -17,7 +17,7 @@ CONFIG_FILES = [
 ]
 
 
-def config_files_exist(config: Dict) -> bool:
+def validate_config(config: Dict) -> bool:
     REQUIRED_ENV_VARS = [
         'MODAL_TOKEN_ID',
         'MODAL_TOKEN_SECRET',
@@ -25,12 +25,16 @@ def config_files_exist(config: Dict) -> bool:
         config.get('s3_access_key_id_var_name', 'S3_ACCESS_KEY_ID'),
         config.get('s3_secret_access_key_var_name', 'S3_SECRET_ACCESS_KEY'),
     ]
+    REQUIRED_TAGS = ['name', 'description', 'year', 'update_type', 'folder_name']
+
+    for tag in REQUIRED_TAGS:
+        if tag not in config:
+            logger.warning(f'Missing required config tag: {tag}')
+            return False
 
     for var in REQUIRED_ENV_VARS:
-        env_var = var.format(folder_name=config['folder_name'])
-
-        if os.getenv(env_var) is None:
-            logger.warning(f'{env_var} is not set in the .env file.')
+        if os.getenv(var) is None:
+            logger.warning(f'{var} is not set in the .env file.')
             return False
 
     for config_file in CONFIG_FILES:
