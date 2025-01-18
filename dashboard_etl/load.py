@@ -24,7 +24,9 @@ class GoogleSheetDashboard:
     def __init__(self, config: Dict):
         self.year = config['year']
         self.folder_name = config['folder_name']
-        self.gspread_credentials_name = config['gspread_credentials_name']
+        self.gspread_credentials_name = config.get(
+            'gspread_credentials_name', f'GSPREAD_CREDENTIALS_{self.year}'
+        )
         self.dashboard_name = config['name']
         self.sheet_name = config['sheet_name']
         self.released_movies_df = temp_table_to_df(
@@ -114,6 +116,7 @@ class GoogleSheetDashboard:
     def setup_worksheet(self) -> None:
         gspread_credentials_key = self.gspread_credentials_name
         gspread_credentials = os.getenv(gspread_credentials_key)
+
         if gspread_credentials is not None:
             credentials_dict = json.loads(gspread_credentials.replace('\n', '\\n'))
             gc = service_account_from_dict(credentials_dict)
