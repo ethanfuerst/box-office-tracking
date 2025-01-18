@@ -139,11 +139,7 @@ dashboards:
 
 To deploy the `sync_and_update.py` script, use the provided shell script `deploy_modal.sh`. This script automates the deployment process using Poetry and Modal.
 
-### Prerequisites
-
 - Ensure that both `poetry` and `modal` are installed and available in your system's PATH.
-
-## Usage
 
 1. **Make the Script Executable**: If you haven't already, make the script executable:
    ```bash
