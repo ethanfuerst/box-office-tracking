@@ -34,6 +34,9 @@ DEFAULT_IDS = get_all_ids_from_config()
         backoff_coefficient=1.0,
         initial_delay=60.0,
     ),
+    mounts=[
+        modal.Mount.from_local_dir('config/', remote_path='/root/config'),
+    ],
 )
 def s3_sync(ids: List[str] = DEFAULT_IDS):
     logging.info(f'Syncing S3 bucket for ids: {", ".join(map(str, ids))}.')
