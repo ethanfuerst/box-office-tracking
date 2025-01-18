@@ -10,7 +10,7 @@ create or replace table base_query_int as ( -- noqa: LT05
             , min(loaded_date) over (
                 partition by title
             ) as first_seen_date
-        from s3_dump
+        from box_office_mojo_dump
     )
 
     , parsed_data as (
@@ -24,9 +24,9 @@ create or replace table base_query_int as ( -- noqa: LT05
         from raw_data
         where year_part == $year -- noqa: PRS, LXR
         qualify row_number() over (
-                partition by title
-                order by loaded_date desc
-            ) = 1
+            partition by title
+            order by loaded_date desc
+        ) = 1
     )
 
     , currently_updating as (
@@ -53,7 +53,7 @@ create or replace table base_query_int as ( -- noqa: LT05
                 and days_since_last_update <= 7
                 , false
             ) as still_in_theaters
-        from s3_dump
+        from box_office_mojo_dump
         qualify row_number() over (
             partition by title
             order by loaded_date desc
