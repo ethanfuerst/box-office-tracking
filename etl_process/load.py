@@ -142,6 +142,7 @@ def update_dashboard(gsheet_dashboard: GoogleSheetDashboard) -> None:
 
     dashboard_done_updating = (
         gsheet_dashboard.released_movies_df['Still In Theaters'].eq('No').all()
+        and len(gsheet_dashboard.released_movies_df) > 0
     )
 
     log_string = f'Last Updated UTC\n{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
