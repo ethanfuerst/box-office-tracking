@@ -32,8 +32,11 @@ If you want to do a smaller draft or don't want to set up an S3 bucket, you can 
 To run your own drafts, you will need a `config.yml` file in the `config` folder. This file should contain an ID for each dashboard you want to update. The top-level tag is `dashboards`, and each ID must include the following keys:
 
 - `name`: Name of the draft.
+  - This will be the title of the dashboard.
 - `description`: Description of the draft.
+  - This isn't used for anything but is useful for you to distinguish between drafts.
 - `year`: Release year of movies to be scraped.
+  - This is used to determine which Box Office Mojo page to scrape. Only movies released in this year will be added to the dashboard.
 - `update_type`: Can be `scrape` or `S3`.
   - `scrape`: Scrapes box office data from [Box Office Mojo](https://www.boxofficemojo.com/year/world/).
   - `S3`: Assumes box office data is already in an S3 bucket and loads it into DuckDB.
