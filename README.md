@@ -27,7 +27,7 @@ The way I originally set this up was to scrape the box office data from the Box 
 
 If you want to do a smaller draft, you can choose for a draft to pull from the Box Office Mojo page each time the dashboard is updated. This is easier to set up, but it's not as accurate as the S3 method.
 
----
+## Configuration
 
 To run this on your own, you will need:
  - a config.yml file in the config folder that contains an id for each dashboard you want to update. The top level tag is "**dashboards**", and each id must have the following tags:
