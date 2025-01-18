@@ -25,7 +25,14 @@ def validate_config(config: Dict) -> bool:
         config.get('s3_access_key_id_var_name', 'S3_ACCESS_KEY_ID'),
         config.get('s3_secret_access_key_var_name', 'S3_SECRET_ACCESS_KEY'),
     ]
-    REQUIRED_TAGS = ['name', 'description', 'year', 'update_type', 'folder_name']
+    REQUIRED_TAGS = [
+        'name',
+        'description',
+        'year',
+        'update_type',
+        'sheet_name',
+        'folder_name',
+    ]
 
     for tag in REQUIRED_TAGS:
         if tag not in config:

@@ -22,6 +22,8 @@ class GoogleSheetDashboard:
     def __init__(self, config: Dict):
         self.year = config['year']
         self.folder_name = config['folder_name']
+        self.dashboard_name = config['name']
+        self.sheet_name = config['sheet_name']
         self.released_movies_df = temp_table_to_df(
             config,
             'base_query',
@@ -117,7 +119,7 @@ class GoogleSheetDashboard:
                 f'{gspread_credentials_key} is not set or is invalid in the .env file.'
             )
 
-        sh = gc.open(f'{self.year} Fantasy Box Office Draft')
+        sh = gc.open(self.sheet_name)
 
         worksheet_title = 'Dashboard'
         worksheet = sh.worksheet(worksheet_title)
@@ -235,7 +237,7 @@ def update_dashboard(gsheet_dashboard: GoogleSheetDashboard) -> None:
 
 def update_titles(gsheet_dashboard: GoogleSheetDashboard) -> None:
     gsheet_dashboard.worksheet.update(
-        values=[['Fantasy Box Office Standings']], range_name='B2'
+        values=[[gsheet_dashboard.dashboard_name]], range_name='B2'
     )
     gsheet_dashboard.worksheet.format(
         'B2',
