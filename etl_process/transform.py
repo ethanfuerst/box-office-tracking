@@ -10,13 +10,11 @@ logger = getLogger(__name__)
 def transform(config: Dict) -> None:
     duckdb_con = DuckDBConnection(config)
 
-    year = config['year']
-
     for sql_file in sorted(glob.glob('assets/*.sql')):
         with open(sql_file, 'r') as f:
             sql_content = (
                 f.read()
-                .replace('$year', str(year))
+                .replace('$year', str(config['year']))
                 .replace('$folder_name', str(config['folder_name']))
             )
 

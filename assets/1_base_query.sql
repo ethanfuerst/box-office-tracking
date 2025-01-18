@@ -24,9 +24,9 @@ create or replace table base_query_int as ( -- noqa: LT05
         from raw_data
         where year_part == $year -- noqa: PRS, LXR
         qualify row_number() over (
-                partition by title
-                order by loaded_date desc
-            ) = 1
+            partition by title
+            order by loaded_date desc
+        ) = 1
     )
 
     , currently_updating as (

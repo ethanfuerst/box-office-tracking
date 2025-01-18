@@ -4,10 +4,7 @@ create or replace table drafter as (
         , overall as overall_pick
         , name
         , movie
-    from read_csv(
-        'assets/drafts/$folder_name/box_office_draft.csv'
-        , auto_detect = true
-    )
+    from read_csv_auto('assets/drafts/$folder_name/box_office_draft.csv')
 );
 
 create or replace table manual_adds as (
