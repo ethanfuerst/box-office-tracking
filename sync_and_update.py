@@ -50,13 +50,15 @@ def s3_sync(ids: List[str] = DEFAULT_IDS):
         f'Syncing S3 bucket for ids: {", ".join(map(str, ids_with_s3_update_type))}.'
     )
     buckets_to_sync = {
-        all_configs[ids_with_s3_update_type.index(id)]['bucket']
+        (all_configs[ids_with_s3_update_type.index(id)]['bucket'])
         for id in ids_with_s3_update_type
     }
 
     logging.info(f'Syncing data to buckets: {", ".join(map(str, buckets_to_sync))}.')
-    for bucket in buckets_to_sync:
-        extract_worldwide_box_office_data(bucket=bucket)
+    for config in all_configs:
+        if config['update_type'] == 's3' and config['bucket'] in buckets_to_sync:
+            extract_worldwide_box_office_data(config=config)
+            buckets_to_sync.remove(config['bucket'])
 
     logging.info(
         f'S3 bucket synced for ids: {", ".join(map(str, ids_with_s3_update_type))}.'
@@ -117,7 +119,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--dry-run',
         action='store_true',
-        help='Run the E and T steps only, skipping the L to load the data in a google sheet.',
+        help='Skips loading the data in a google sheet.',
     )
     parser.add_argument(
         '--sync-s3',
@@ -136,7 +138,7 @@ if __name__ == '__main__':
         logging.info('S3 sync completed.')
 
     logging.info(
-        f'Running ETL locally for ids: {", ".join(map(str, ids))} and dry_run: {dry_run}'
+        f'Updating dashboards locally for ids: {", ".join(map(str, ids))} and dry_run: {dry_run}'
     )
     update_dashboards.local(ids=ids, dry_run=dry_run)
-    logging.info('ETL process completed.')
+    logging.info('Dashboard update process completed.')

@@ -17,6 +17,7 @@ There are 3 main sections of the dashboard:
 - **Released Movies**
   - Every movie that has been drafted or is listed in `manual_adds.csv` is listed here.
   - The movies are sorted by scored revenue.
+  - On the far right column, there's a flag that shows if the movie is still updating. If no movies are still updating, then the timestamp next to the dashboard will show a message.
 - **Worst Picks**
   - The worst picks are listed here, which are the movies that missed out on the most revenue. For example, if you picked a movie first that made \$100 million, and then the next best movie made \$200 million, you missed out on \$100 million.
   - The movies are sorted by the maximum amount of revenue they missed out on.
@@ -51,24 +52,42 @@ Optional keys include:
 - `round_multiplier_overrides`: Add a specific scored revenue multiplier for a round.
   - **Key:** `round`
   - **Key:** `multiplier`
-- `gspread_credentials_name`: Name of the gspread credentials variable in the `.env` file. Defaults to `GSPREAD_CREDENTIALS_<year>`.
-- `bucket`: Name of the S3 bucket (and path, if applicable) that contains the box office data. Only needed if `update_type` is `S3`.
-- `s3_access_key_id_var_name`: Name of the S3 access key id variable in the `.env` file. Only needed if `update_type` is `S3`. Defaults to `S3_ACCESS_KEY_ID`. This access_key must have read access to the bucket.
-- `s3_secret_access_key_var_name`: Name of the S3 secret access key variable in the `.env` file. Only needed if `update_type` is `S3`. Defaults to `S3_SECRET_ACCESS_KEY`. This secret_key must have read access to the bucket.
-- `BOX_OFFICE_TRACKING_S3_ACCESS_KEY_ID`: Name of the S3 access key id variable in the `.env` file. Only needed if `update_type` is `S3`. This access_key must have write access to the bucket.
-- `BOX_OFFICE_TRACKING_S3_SECRET_ACCESS_KEY`: Name of the S3 secret access key variable in the `.env` file. Only needed if `update_type` is `S3`. This secret_key must have write access to the bucket.
+- `gspread_credentials_name`: Name of the gspread credentials variable in the `.env` file.
+  - Defaults to `GSPREAD_CREDENTIALS_<year>`.
+- `bucket`: Name of the S3 bucket (and path, if applicable) that contains the box office data.
+  - Only needed if `update_type` is `S3`.
+- `s3_read_access_key_id_var_name`: Name of the S3 access key id variable in the `.env` file.
+  - Only needed if `update_type` is `S3`.
+  - This access_key must have read access to the bucket.
+  - Defaults to `S3_ACCESS_KEY_ID`.
+- `s3_read_secret_access_key_var_name`: Name of the S3 secret access key variable in the `.env` file.
+  - Only needed if `update_type` is `S3`.
+  - This secret_key must have read access to the bucket.
+  - Defaults to `S3_SECRET_ACCESS_KEY`.
+- `s3_write_access_key_id_var_name`: Name of the S3 access key id variable in the `.env` file.
+  - Only needed if `update_type` is `S3`.
+  - This access_key must have write access to the bucket.
+  - Defaults to `S3_ACCESS_KEY_ID`.
+- `s3_write_secret_access_key_var_name`: Name of the S3 secret access key variable in the `.env` file.
+  - Only needed if `update_type` is `S3`.
+  - This secret_key must have write access to the bucket.
+  - Defaults to `S3_SECRET_ACCESS_KEY`.
 
 For each ID in your `config.yml` file, you will also need:
 
 - A Google Sheet named `sheet_name` with a tab called "Dashboard"
   - This sheet will be used to display the box office data for the year.
   - See below about how to set up access to this sheet.
-- The following variables in your `.env` file:
+- The following variables in your `.env` [file](https://onboardbase.com/blog/env-file-guide/):
   - `MODAL_TOKEN_ID` and `MODAL_TOKEN_SECRET`
     - Token ID and secret for the [modal](https://modal.com/) account.
   - `GSPREAD_CREDENTIALS_<year>`
     - Credentials for the Google Sheet that data will be written to for that year. [Here](https://docs.gspread.org/en/latest/oauth2.html#for-bots-using-service-account) is how to generate these credentials and add the account to the Google Sheet.
     - You can change the name of this variable in the `config.yml` file using the `gspread_credentials_name` key, but it defaults to `GSPREAD_CREDENTIALS_<year>`.
+  - `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`
+    - Only needed if `update_type` is `S3`.
+    - For security, I recommend creating 2 pairs of keys, one for read access and one for write access.
+    - You can change the name of these in the `config.yml` file using the `s3_read_access_key_id_var_name`, `s3_read_secret_access_key_var_name`, `s3_write_access_key_id_var_name`, and `s3_write_secret_access_key_var_name` keys, but they default to `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`.
 - A corresponding folder (specified in the `folder_name` key in the `config.yml` file) in `assets/` with the following files:
   - `box_office_draft.csv`
     - Source of truth for the box office draft.
@@ -77,15 +96,7 @@ For each ID in your `config.yml` file, you will also need:
     - List of movies that do not show up in the top 200 at the end of the year so they must be added manually.
     - **Columns:** title, revenue, domestic_rev, foreign_rev, release_date
 
-If your `update_type` is `S3`, you will need an S3 bucket with the following files:
-
-- `boxofficemojo_YYYYMMDD.parquet`
-  - Contains the box office data for the year scraped from [Box Office Mojo](https://www.boxofficemojo.com/year/world/) on YYYYMMDD with the following columns:
-    - "Release Group"
-    - "Worldwide"
-    - "Domestic"
-    - "Foreign"
-    - "Date"
+If any of your dashboards have an `update_type` of `S3`, the script will run an ETL process to load the data from Box Office Mojo into your bucket. If you registered a modal account, S3 bucket, and have the correct keys in your `.env` file, the script will update the data in the bucket every day at 4am UTC.
 
 Here is an example of the `config/config.yml` file:
 
@@ -107,6 +118,43 @@ dashboards:
     gspread_credentials_name: GSPREAD_CREDENTIALS_FRIENDS_2025
     # The following are only needed if update_type is s3
     bucket: box-office-tracking
-    s3_access_key_id_var_name: S3_ACCESS_KEY_ID_MY_2025_DRAFT
-    s3_secret_access_key_var_name: S3_SECRET_ACCESS_KEY_MY_2025_DRAFT
+    s3_write_access_key_id_var_name: S3_WRITE_ACCESS_KEY_ID_MY_2025_DRAFT
+    s3_write_secret_access_key_var_name: S3_WRITE_SECRET_ACCESS_KEY_MY_2025_DRAFT
+    s3_read_access_key_id_var_name: S3_READ_ACCESS_KEY_ID_MY_2025_DRAFT
+    s3_read_secret_access_key_var_name: S3_READ_SECRET_ACCESS_KEY_MY_2025_DRAFT
 ```
+
+## Set Up
+
+1. Download this repo, either by cloning it or downloading the zip file.
+2. Set up a [modal](https://modal.com/) account.
+3. (Optional) Set up a S3 bucket to store the box office data. I like to use [Digital Ocean Spaces](https://www.digitalocean.com/products/spaces).
+4. Create a google sheet with a tab called "Dashboard". Follow this guide to [set up APIaccess to this sheet](https://docs.gspread.org/en/latest/oauth2.html#for-bots-using-service-account).
+5. Create a `.env` file in the root directory that follows the format above.
+6. Create a `config/config.yml` file in the root directory that follows the format above.
+7. Add your draft data to the `assets/<folder_name>` folder. See the section above to follow the format for these files.
+8. If you want to run the script locally, you can do so by installing python and running `poetry install` and then `poetry run python sync_and_update.py`.
+
+## Deployment
+
+To deploy the `sync_and_update.py` script, use the provided shell script `deploy_modal.sh`. This script automates the deployment process using Poetry and Modal.
+
+### Prerequisites
+
+- Ensure that both `poetry` and `modal` are installed and available in your system's PATH.
+
+## Usage
+
+1. **Make the Script Executable**: If you haven't already, make the script executable:
+   ```bash
+   chmod +x deploy_modal.sh
+   ```
+
+2. **Basic Deployment**: Run the following command to deploy the script:
+   ```bash
+   ./deploy_modal.sh
+   ```
+
+3. **Add .env file to modal secrets**: Go to your app on modal.com and add your `.env` file to a new secret called `box-office-tracking-secrets`.
+
+The S3 sync updates the data in the bucket every day at 4am UTC, and the dashboard is updated every day at 5am UTC.

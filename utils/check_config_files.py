@@ -20,8 +20,10 @@ def validate_config(config: Dict) -> bool:
         'MODAL_TOKEN_ID',
         'MODAL_TOKEN_SECRET',
         config['gspread_credentials_name'],
-        config.get('s3_access_key_id_var_name', 'S3_ACCESS_KEY_ID'),
-        config.get('s3_secret_access_key_var_name', 'S3_SECRET_ACCESS_KEY'),
+        config.get('s3_read_access_key_id_var_name', 'S3_ACCESS_KEY_ID'),
+        config.get('s3_read_secret_access_key_var_name', 'S3_SECRET_ACCESS_KEY'),
+        config.get('s3_write_access_key_id_var_name', 'S3_ACCESS_KEY_ID'),
+        config.get('s3_write_secret_access_key_var_name', 'S3_SECRET_ACCESS_KEY'),
     ]
     REQUIRED_TAGS = [
         'name',

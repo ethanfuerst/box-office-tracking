@@ -42,14 +42,12 @@ def load_worldwide_box_office_to_s3(
     return rows_loaded
 
 
-def extract_worldwide_box_office_data(bucket: str) -> None:
+def extract_worldwide_box_office_data(config: Dict) -> None:
     logging.info('Extracting worldwide box office data.')
 
     duckdb_con = DuckDBConnection(
-        config={
-            's3_access_key_id_var_name': 'BOX_OFFICE_TRACKING_S3_ACCESS_KEY_ID',
-            's3_secret_access_key_var_name': 'BOX_OFFICE_TRACKING_S3_SECRET_ACCESS_KEY',
-        }
+        config=config,
+        need_write_access=True,
     ).connection
 
     current_year = datetime.date.today().year
@@ -58,6 +56,7 @@ def extract_worldwide_box_office_data(bucket: str) -> None:
     logging.info(f'Running for {current_year} and {last_year}')
 
     total_rows_loaded = 0
+    bucket = config['bucket']
 
     for year in [current_year, last_year]:
         total_rows_loaded += load_worldwide_box_office_to_s3(
