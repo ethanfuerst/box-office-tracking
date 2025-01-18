@@ -39,15 +39,29 @@ DEFAULT_IDS = get_all_ids_from_config()
     ],
 )
 def s3_sync(ids: List[str] = DEFAULT_IDS):
-    logging.info(f'Syncing S3 bucket for ids: {", ".join(map(str, ids))}.')
+    all_configs = [get_config_for_id(id=id) for id in ids]
+    ids_with_s3_update_type = [
+        id for id in ids if all_configs[ids.index(id)].get('update_type') == 's3'
+    ]
+    if not ids_with_s3_update_type:
+        logging.info('No ids with s3 update type found. Skipping S3 sync.')
+        return
 
-    buckets_to_sync = {get_config_for_id(id=id)['bucket'] for id in ids}
+    logging.info(
+        f'Syncing S3 bucket for ids: {", ".join(map(str, ids_with_s3_update_type))}.'
+    )
+    buckets_to_sync = {
+        all_configs[ids_with_s3_update_type.index(id)]['bucket']
+        for id in ids_with_s3_update_type
+    }
 
     logging.info(f'Syncing data to buckets: {", ".join(map(str, buckets_to_sync))}.')
     for bucket in buckets_to_sync:
         extract_worldwide_box_office_data(bucket=bucket)
 
-    logging.info(f'S3 bucket synced for ids: {", ".join(map(str, ids))}.')
+    logging.info(
+        f'S3 bucket synced for ids: {", ".join(map(str, ids_with_s3_update_type))}.'
+    )
 
 
 @app.function(
