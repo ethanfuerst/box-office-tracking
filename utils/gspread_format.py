@@ -1,10 +1,12 @@
-from logging import getLogger
+import logging
 from typing import Dict, List, Optional
 
 from gspread import Worksheet
 from pandas import DataFrame
 
-logger = getLogger(__name__)
+from utils.logging_config import setup_logging
+
+setup_logging()
 
 
 def df_to_sheet(
@@ -14,10 +16,12 @@ def df_to_sheet(
         range_name=location, values=[df.columns.values.tolist()] + df.values.tolist()
     )
 
-    logger.info(f'Updated {location} with {df.shape[0]} rows and {df.shape[1]} columns')
+    logging.info(
+        f'Updated {location} with {df.shape[0]} rows and {df.shape[1]} columns'
+    )
 
     if format_dict:
         for format_location, format_rules in format_dict.items():
             worksheet.format(ranges=format_location, format=format_rules)
 
-        logger.info(f'Formatted {location} with {format_dict.keys()}')
+        logging.info(f'Formatted {location} with {format_dict.keys()}')

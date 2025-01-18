@@ -1,17 +1,18 @@
+import logging
 import os
 import ssl
-from logging import getLogger
 from typing import Dict
 
 import duckdb
 from pandas import read_html
 
+from utils.logging_config import setup_logging
+
+setup_logging()
+
 from utils.db_connection import DuckDBConnection
 
 S3_DATE_FORMAT = '%Y%m%d'
-
-
-logger = getLogger(__name__)
 
 
 def extract(config: Dict) -> None:
@@ -46,12 +47,12 @@ def extract(config: Dict) -> None:
         )
 
         row_count = 'select count(*) from box_office_mojo_dump'
-        logger.info(
+        logging.info(
             f'Read {duckdb_con.query(row_count).fetchnumpy()["count_star()"][0]} rows with query from s3 bucket'
         )
 
     else:
-        logger.info('Skipping extract step and getting data from Box Office Mojo.')
+        logging.info('Skipping extract step and getting data from Box Office Mojo.')
         try:
             year = config['year']
 
@@ -59,12 +60,12 @@ def extract(config: Dict) -> None:
 
             df = read_html(f'https://www.boxofficemojo.com/year/world/{year}')[0]
 
-            logger.info(f'Read {len(df)} rows with scrape from Box Office Mojo')
+            logging.info(f'Read {len(df)} rows with scrape from Box Office Mojo')
 
             duckdb_con.connection.register('df', df)
             duckdb_con.execute("CREATE OR REPLACE TABLE all_data AS SELECT * FROM df")
 
-            logger.info('DataFrame loaded into DuckDB table all_data.')
+            logging.info('DataFrame loaded into DuckDB table all_data.')
 
             duckdb_con.execute(
                 f'''
@@ -80,9 +81,9 @@ def extract(config: Dict) -> None:
                 )
                 '''
             )
-            logger.info('DataFrame loaded into DuckDB table box_office_mojo_dump.')
+            logging.info('DataFrame loaded into DuckDB table box_office_mojo_dump.')
 
         except Exception as e:
-            logger.error(f'Failed to fetch data: {e}')
+            logging.error(f'Failed to fetch data: {e}')
 
     duckdb_con.close()
