@@ -2,11 +2,30 @@
 
 set -e
 
-echo "Starting deployment of sync_and_update.py..."
+FILE="sync_and_update.py"
 
-if poetry run modal deploy sync_and_update.py; then
-    echo "Deployment completed successfully."
+log() {
+    local message="$1"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - $message"
+}
+
+if ! command -v poetry &> /dev/null; then
+    log "Poetry is not installed. Please install it first." >&2
+    exit 1
+fi
+
+if ! command -v modal &> /dev/null; then
+    log "Modal is not installed. Please install it first." >&2
+    exit 1
+fi
+
+log "Starting deployment of $FILE..."
+
+poetry run modal deploy "$FILE"
+
+if [ $? -eq 0 ]; then
+    log "Deployment completed successfully."
 else
-    echo "Deployment failed." >&2
+    log "Deployment failed." >&2
     exit 1
 fi
