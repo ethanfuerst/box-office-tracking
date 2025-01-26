@@ -12,7 +12,7 @@ setup_logging()
 
 from utils.db_connection import DuckDBConnection
 
-S3_DATE_FORMAT = '%Y%m%d'
+S3_DATE_FORMAT = '%Y-%m-%d'
 
 
 def extract(config: Dict) -> None:
@@ -25,9 +25,9 @@ def extract(config: Dict) -> None:
                 with all_data as (
                     select
                         *
-                        , split_part(split_part(filename, '_', -1), '.', -2) as date_str
-                        , split_part(filename, '_', -2) as year_part_from_s3
-                    from read_parquet('s3://{config['bucket']}/boxofficemojo_*.parquet', filename=true)
+                        , split_part(split_part(filename, 'release_year=', 2), '/', 1) as year_part_from_s3
+                        , strptime(split_part(split_part(filename, 'scraped_date=', 2), '/', 1), '{S3_DATE_FORMAT}') as scraped_date_from_s3
+                    from read_parquet('s3://{config['bucket']}/release_year=*/scraped_date=*/data.parquet', filename=true)
                 )
 
                 select
@@ -35,12 +35,8 @@ def extract(config: Dict) -> None:
                     , coalesce(try_cast(replace("Worldwide"[2:], ',', '') as integer), 0) as revenue
                     , coalesce(try_cast(replace("Domestic"[2:], ',', '') as integer), 0) as domestic_rev
                     , coalesce(try_cast(replace("Foreign"[2:], ',', '') as integer), 0) as foreign_rev
-                    , strptime(date_str, '{S3_DATE_FORMAT}') as loaded_date
-                    , if(
-                        year_part_from_s3 = 'ytd'
-                        , try_cast(date_part('year', loaded_date) as int)
-                        , try_cast(year_part_from_s3 as int)
-                    ) as year_part
+                    , scraped_date_from_s3 as loaded_date
+                    , year_part_from_s3 as year_part
                 from all_data
             )
             '''
