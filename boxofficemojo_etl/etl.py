@@ -10,7 +10,7 @@ from utils.db_connection import DuckDBConnection
 from utils.logging_config import setup_logging
 from utils.s3_utils import load_df_to_s3_table
 
-S3_DATE_FORMAT = '%Y%m%d'
+S3_DATE_FORMAT = '%Y-%m-%d'
 setup_logging()
 
 
@@ -30,7 +30,7 @@ def load_worldwide_box_office_to_s3(
 
     formatted_date = datetime.date.today().strftime(S3_DATE_FORMAT)
 
-    s3_key = f'boxofficemojo_{year}_{formatted_date}'
+    s3_key = f'release_year={year}/scraped_date={formatted_date}/data'
 
     rows_loaded = load_df_to_s3_table(
         duckdb_con=duckdb_con,
