@@ -68,6 +68,10 @@ Optional keys include:
   - `s3_write_secret_access_key_var_name`: Name of the S3 secret access key variable in the `.env` file.
     - This secret_key must have write access to the bucket.
     - Defaults to `S3_SECRET_ACCESS_KEY`.
+- Under the `draft_years` key, you can set the following keys if `update_type` is `S3`:
+  - `year`: Release year
+    - `exclusions`: List of movies to exclude from the draft. This is needed when some movies change title during the year.
+      - `movie_title`: Title of the movie to exclude.
 
 For each ID in your `config.yml` file, you will also need:
 
@@ -113,6 +117,11 @@ dashboards:
         multiplier: 5
     gspread_credentials_name: GSPREAD_CREDENTIALS_FRIENDS_2025
 # The following are only needed if update_type is s3
+draft_years:
+  2025:
+    exclusions:
+      - "Den of Thieves 2"
+      - "Den of Thieves 2: Pantera"
 bucket:
   bucket: box-office-tracking
   s3_write_access_key_id_var_name: S3_WRITE_ACCESS_KEY_ID_MY_2025_DRAFT

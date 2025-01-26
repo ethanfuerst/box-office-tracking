@@ -22,6 +22,7 @@ def get_all_ids_from_config() -> List[str]:
 def load_override_tables(config: Dict) -> None:
     movie_overrides = config.get('movie_multiplier_overrides', [])
     round_overrides = config.get('round_multiplier_overrides', [])
+    exclusions = config.get('exclusions', [])
 
     duckdb_con = DuckDBConnection(config)
 
@@ -34,6 +35,9 @@ def load_override_tables(config: Dict) -> None:
         CREATE OR REPLACE TABLE round_multiplier_overrides (
             round INTEGER,
             multiplier DOUBLE
+        );
+        CREATE OR REPLACE TABLE draft_year_exclusions (
+            movie VARCHAR
         );
     '''
     )
@@ -50,12 +54,23 @@ def load_override_tables(config: Dict) -> None:
             (override['round'], override['multiplier']),
         )
 
+    for exclusion in exclusions:
+        duckdb_con.execute(
+            'INSERT INTO draft_year_exclusions VALUES (?)',
+            (exclusion,),
+        )
+
     duckdb_con.close()
 
 
 def get_config_for_id(id: str) -> Dict:
-    config = get_top_level_config()['dashboards'][id]
-    config['bucket'] = get_top_level_config()['bucket']['bucket']
+    top_level_config = get_top_level_config()
+
+    config = top_level_config['dashboards'][id]
+    config['exclusions'] = top_level_config['draft_years'][config['year']]['exclusions']
+
+    bucket_config = top_level_config['bucket']
+    config['bucket'] = bucket_config['bucket']
 
     var_names = [
         's3_read_access_key_id_var_name',
@@ -64,7 +79,7 @@ def get_config_for_id(id: str) -> Dict:
         's3_write_secret_access_key_var_name',
     ]
     for var_name in var_names:
-        config[var_name] = get_top_level_config()['bucket'].get(var_name, None)
+        config[var_name] = bucket_config.get(var_name, None)
 
     load_override_tables(config)
 

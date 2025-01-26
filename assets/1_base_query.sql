@@ -11,6 +11,10 @@ create or replace table base_query_int as ( -- noqa: LT05
                 partition by title
             ) as first_seen_date
         from box_office_mojo_dump
+        where title not in (
+            select distinct draft_year_exclusions.movie
+            from draft_year_exclusions
+        )
     )
 
     , parsed_data as (
