@@ -54,24 +54,20 @@ Optional keys include:
   - **Key:** `multiplier`
 - `gspread_credentials_name`: Name of the gspread credentials variable in the `.env` file.
   - Defaults to `GSPREAD_CREDENTIALS_<year>`.
-- `bucket`: Name of the S3 bucket (and path, if applicable) that contains the box office data.
-  - Only needed if `update_type` is `S3`.
-- `s3_read_access_key_id_var_name`: Name of the S3 access key id variable in the `.env` file.
-  - Only needed if `update_type` is `S3`.
-  - This access_key must have read access to the bucket.
-  - Defaults to `S3_ACCESS_KEY_ID`.
-- `s3_read_secret_access_key_var_name`: Name of the S3 secret access key variable in the `.env` file.
-  - Only needed if `update_type` is `S3`.
-  - This secret_key must have read access to the bucket.
-  - Defaults to `S3_SECRET_ACCESS_KEY`.
-- `s3_write_access_key_id_var_name`: Name of the S3 access key id variable in the `.env` file.
-  - Only needed if `update_type` is `S3`.
-  - This access_key must have write access to the bucket.
-  - Defaults to `S3_ACCESS_KEY_ID`.
-- `s3_write_secret_access_key_var_name`: Name of the S3 secret access key variable in the `.env` file.
-  - Only needed if `update_type` is `S3`.
-  - This secret_key must have write access to the bucket.
-  - Defaults to `S3_SECRET_ACCESS_KEY`.
+- Under the `bucket` key, you can set the following keys if `update_type` is `S3`:
+  - `bucket`: Name of the S3 bucket (and path, if applicable) that contains the box office data.
+  - `s3_read_access_key_id_var_name`: Name of the S3 access key id variable in the `.env` file.
+    - This access_key must have read access to the bucket.
+    - Defaults to `S3_ACCESS_KEY_ID`.
+  - `s3_read_secret_access_key_var_name`: Name of the S3 secret access key variable in the `.env` file.
+    - This secret_key must have read access to the bucket.
+    - Defaults to `S3_SECRET_ACCESS_KEY`.
+  - `s3_write_access_key_id_var_name`: Name of the S3 access key id variable in the `.env` file.
+    - This access_key must have write access to the bucket.
+    - Defaults to `S3_ACCESS_KEY_ID`.
+  - `s3_write_secret_access_key_var_name`: Name of the S3 secret access key variable in the `.env` file.
+    - This secret_key must have write access to the bucket.
+    - Defaults to `S3_SECRET_ACCESS_KEY`.
 
 For each ID in your `config.yml` file, you will also need:
 
@@ -116,12 +112,13 @@ dashboards:
       - round: 20
         multiplier: 5
     gspread_credentials_name: GSPREAD_CREDENTIALS_FRIENDS_2025
-    # The following are only needed if update_type is s3
-    bucket: box-office-tracking
-    s3_write_access_key_id_var_name: S3_WRITE_ACCESS_KEY_ID_MY_2025_DRAFT
-    s3_write_secret_access_key_var_name: S3_WRITE_SECRET_ACCESS_KEY_MY_2025_DRAFT
-    s3_read_access_key_id_var_name: S3_READ_ACCESS_KEY_ID_MY_2025_DRAFT
-    s3_read_secret_access_key_var_name: S3_READ_SECRET_ACCESS_KEY_MY_2025_DRAFT
+# The following are only needed if update_type is s3
+bucket:
+  bucket: box-office-tracking
+  s3_write_access_key_id_var_name: S3_WRITE_ACCESS_KEY_ID_MY_2025_DRAFT
+  s3_write_secret_access_key_var_name: S3_WRITE_SECRET_ACCESS_KEY_MY_2025_DRAFT
+  s3_read_access_key_id_var_name: S3_READ_ACCESS_KEY_ID_MY_2025_DRAFT
+  s3_read_secret_access_key_var_name: S3_READ_SECRET_ACCESS_KEY_MY_2025_DRAFT
 ```
 
 ## Set Up
