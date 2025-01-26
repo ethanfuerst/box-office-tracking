@@ -56,18 +56,14 @@ def load_override_tables(config: Dict) -> None:
 def get_config_for_id(id: str) -> Dict:
     config = get_top_level_config()['dashboards'][id]
     config['bucket'] = get_top_level_config()['bucket']['bucket']
-    config['s3_read_access_key_id_var_name'] = get_top_level_config()['bucket'][
-        's3_read_access_key_id_var_name'
+    var_names = [
+        's3_read_access_key_id_var_name',
+        's3_read_secret_access_key_var_name',
+        's3_write_access_key_id_var_name',
+        's3_write_secret_access_key_var_name',
     ]
-    config['s3_read_secret_access_key_var_name'] = get_top_level_config()['bucket'][
-        's3_read_secret_access_key_var_name'
-    ]
-    config['s3_write_access_key_id_var_name'] = get_top_level_config()['bucket'][
-        's3_write_access_key_id_var_name'
-    ]
-    config['s3_write_secret_access_key_var_name'] = get_top_level_config()['bucket'][
-        's3_write_secret_access_key_var_name'
-    ]
+    for var_name in var_names:
+        config[var_name] = get_top_level_config()['bucket'].get(var_name, None)
 
     load_override_tables(config)
 
