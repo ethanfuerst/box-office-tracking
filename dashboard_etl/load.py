@@ -22,8 +22,8 @@ load_dotenv()
 
 class GoogleSheetDashboard:
     def __init__(self, config: Dict):
+        self.config = config
         self.year = config['year']
-        self.folder_name = config['folder_name']
         self.gspread_credentials_name = config.get(
             'gspread_credentials_name', f'GSPREAD_CREDENTIALS_{self.year}'
         )
@@ -285,8 +285,9 @@ def apply_conditional_formatting(gsheet_dashboard: GoogleSheetDashboard) -> None
 
 
 def log_missing_movies(gsheet_dashboard: GoogleSheetDashboard) -> None:
-    draft_df = read_csv(
-        f'assets/drafts/{gsheet_dashboard.folder_name}/box_office_draft.csv'
+    draft_df = temp_table_to_df(
+        gsheet_dashboard.config,
+        'drafter',
     )
     released_movies = [
         str(movie) for movie in gsheet_dashboard.released_movies_df['Title'].tolist()

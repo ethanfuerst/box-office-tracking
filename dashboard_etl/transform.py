@@ -13,11 +13,7 @@ def transform(config: Dict) -> None:
 
     for sql_file in sorted(glob.glob('assets/*.sql')):
         with open(sql_file, 'r') as f:
-            sql_content = (
-                f.read()
-                .replace('$year', str(config['year']))
-                .replace('$folder_name', str(config['folder_name']))
-            )
+            sql_content = f.read().replace('$year', str(config['year']))
 
         duckdb_con.execute(sql_content)
 
