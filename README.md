@@ -42,16 +42,9 @@ To run your own drafts, you will need a `config.yml` file in the `config` folder
   - `scrape`: Scrapes box office data from [Box Office Mojo](https://www.boxofficemojo.com/year/world/).
   - `S3`: Assumes box office data is already in an S3 bucket and loads it into DuckDB.
 - `sheet_name`: Name of the Google Sheet where the dashboard will be written.
-- `folder_name`: Name of the folder in the `assets/` folder containing the draft's config files.
 
 Optional keys include:
 
-- `movie_multiplier_overrides`: Adjust the scored revenue multiplier for specific movies.
-  - **Key:** `movie`
-  - **Key:** `multiplier`
-- `round_multiplier_overrides`: Add a specific scored revenue multiplier for a round.
-  - **Key:** `round`
-  - **Key:** `multiplier`
 - `gspread_credentials_name`: Name of the gspread credentials variable in the `.env` file.
   - Defaults to `GSPREAD_CREDENTIALS_<year>`.
 - Under the `bucket` key, you can set the following keys if `update_type` is `S3`:
@@ -68,16 +61,37 @@ Optional keys include:
   - `s3_write_secret_access_key_var_name`: Name of the S3 secret access key variable in the `.env` file.
     - This secret_key must have write access to the bucket.
     - Defaults to `S3_SECRET_ACCESS_KEY`.
-- Under the `draft_years` key, you can set the following keys if `update_type` is `S3`:
-  - `year`: Release year
-    - `exclusions`: List of movies to exclude from the draft. This is needed when some movies change title during the year.
-      - `movie_title`: Title of the movie to exclude.
 
 For each ID in your `config.yml` file, you will also need:
 
 - A Google Sheet named `sheet_name` with a tab called "Dashboard"
   - This sheet will be used to display the box office data for the year.
   - See below about how to set up access to this sheet.
+  - The sheet must have the following tabs:
+    - `Draft`
+      - Source of truth for the box office draft.
+      - **Columns:** round, overall_pick, name, movie
+        - `round`: Round number of draft
+        - `overall_pick`: Overall pick number of draft
+        - `name`: Name of the person picking
+        - `movie`: Movie picked
+    - `Dashboard`
+      - Dashboard that displays the box office data for the year.
+      - This script updates it every day.
+    - `Multipliers and Exclusions`
+      - Multipliers and exclusions for the box office draft.
+      - **Columns:** type, value, multiplier
+        - `type`: Type of record. Can be `movie`, `round`, or `exclusion`.
+        - `value`: Value of record. Either a round number, a movie title for a multiplier, or a movie title to exclude.
+        - `multiplier`: Multiplier for the record, if applicable.
+    - `Manual Adds`
+      - Manual adds for the box office draft. Used for movies that are not in the top 200 at the end of the year.
+      - **Columns:** title, revenue, domestic_rev, foreign_rev, release_date
+        - `title`: Title of the movie
+        - `revenue`: Revenue of the movie
+        - `domestic_rev`: Domestic revenue of the movie
+        - `foreign_rev`: Foreign revenue of the movie
+        - `release_date`: Release date of the movie
 - The following variables in your `.env` [file](https://onboardbase.com/blog/env-file-guide/):
   - `MODAL_TOKEN_ID` and `MODAL_TOKEN_SECRET`
     - Token ID and secret for the [modal](https://modal.com/) account.
@@ -88,13 +102,6 @@ For each ID in your `config.yml` file, you will also need:
     - Only needed if `update_type` is `S3`.
     - For security, I recommend creating 2 pairs of keys, one for read access and one for write access.
     - You can change the name of these in the `config.yml` file using the `s3_read_access_key_id_var_name`, `s3_read_secret_access_key_var_name`, `s3_write_access_key_id_var_name`, and `s3_write_secret_access_key_var_name` keys, but they default to `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`.
-- A corresponding folder (specified in the `folder_name` key in the `config.yml` file) in `assets/` with the following files:
-  - `box_office_draft.csv`
-    - Source of truth for the box office draft.
-    - **Columns:** round, overall, name, movie
-  - `manual_adds.csv`
-    - List of movies that do not show up in the top 200 at the end of the year so they must be added manually.
-    - **Columns:** title, revenue, domestic_rev, foreign_rev, release_date
 
 If any of your dashboards have an `update_type` of `S3`, the script will run an ETL process to load the data from Box Office Mojo into your bucket. If you registered a modal account, S3 bucket, and have the correct keys in your `.env` file, the script will update the data in the bucket every day at 4am UTC.
 
@@ -108,20 +115,8 @@ dashboards:
     year: 2025
     update_type: s3
     sheet_name: 2025 Fantasy Box Office Draft
-    folder_name: my_2025_draft_data
-    movie_multiplier_overrides:
-      - movie: "Avatar: Fire and Ash"
-        multiplier: 0.5
-    round_multiplier_overrides:
-      - round: 20
-        multiplier: 5
     gspread_credentials_name: GSPREAD_CREDENTIALS_FRIENDS_2025
 # The following are only needed if update_type is s3
-draft_years:
-  2025:
-    exclusions:
-      - "Den of Thieves 2"
-      - "Den of Thieves 2: Pantera"
 bucket:
   bucket: box-office-tracking
   s3_write_access_key_id_var_name: S3_WRITE_ACCESS_KEY_ID_MY_2025_DRAFT

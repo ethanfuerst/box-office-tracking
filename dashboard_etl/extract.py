@@ -1,10 +1,12 @@
+import json
 import logging
 import os
 import ssl
 from typing import Dict
 
 import duckdb
-from pandas import read_html
+from gspread import service_account_from_dict
+from pandas import DataFrame, read_html
 
 from utils.logging_config import setup_logging
 
@@ -15,7 +17,29 @@ from utils.db_connection import DuckDBConnection
 S3_DATE_FORMAT = '%Y-%m-%d'
 
 
-def extract(config: Dict) -> None:
+def get_draft_data(config: Dict) -> None:
+    gspread_credentials_name = config.get(
+        'gspread_credentials_name', f'GSPREAD_CREDENTIALS_{config["year"]}'
+    )
+
+    credentials_dict = json.loads(
+        os.getenv(gspread_credentials_name).replace('\n', '\\n')
+    )
+    gc = service_account_from_dict(credentials_dict)
+    worksheet = gc.open(config['sheet_name']).worksheet('Draft')
+
+    raw = worksheet.get_all_values()
+    df = DataFrame(data=raw[1:], columns=raw[0]).astype(str)
+
+    duckdb_con = DuckDBConnection(config)
+
+    duckdb_con.connection.register('df', df)
+    duckdb_con.execute('create or replace table drafter as select * from df')
+
+    duckdb_con.close()
+
+
+def get_movie_data(config: Dict) -> None:
     duckdb_con = DuckDBConnection(config)
 
     if config['update_type'] == 's3':
@@ -83,3 +107,8 @@ def extract(config: Dict) -> None:
             logging.error(f'Failed to fetch data: {e}')
 
     duckdb_con.close()
+
+
+def extract(config: Dict) -> None:
+    get_movie_data(config)
+    get_draft_data(config)
