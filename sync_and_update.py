@@ -74,7 +74,10 @@ def s3_sync(ids: List[str] = DEFAULT_IDS):
         backoff_coefficient=1.0,
         initial_delay=60.0,
     ),
-    mounts=[CONFIG_MOUNT],
+    mounts=[
+        CONFIG_MOUNT,
+        modal.Mount.from_local_dir('assets/', remote_path='/root/assets'),
+    ],
 )
 def update_dashboards(ids: List[str] = DEFAULT_IDS, dry_run: bool = False):
     logging.info(f'Starting ETL process for ids: {", ".join(map(str, ids))}.')
