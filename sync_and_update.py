@@ -18,12 +18,15 @@ setup_logging()
 
 app = modal.App('box-office-tracking')
 
-modal_image = modal.Image.debian_slim(python_version='3.10').poetry_install_from_file(
-    poetry_pyproject_toml='pyproject.toml'
+modal_image = (
+    modal.Image.debian_slim(python_version='3.10')
+    .poetry_install_from_file(poetry_pyproject_toml='pyproject.toml')
+    .add_local_dir('config/', remote_path='/root/config')
+    .add_local_dir('assets/', remote_path='/root/assets')
+    .add_local_python_source('boxofficemojo_etl', 'dashboard_etl', 'utils')
 )
 
 DEFAULT_IDS = get_all_ids_from_config()
-CONFIG_MOUNT = modal.Mount.from_local_dir('config/', remote_path='/root/config')
 
 
 @app.function(
@@ -35,7 +38,6 @@ CONFIG_MOUNT = modal.Mount.from_local_dir('config/', remote_path='/root/config')
         backoff_coefficient=1.0,
         initial_delay=60.0,
     ),
-    mounts=[CONFIG_MOUNT],
 )
 def s3_sync(ids: List[str] = DEFAULT_IDS):
     all_configs = [get_config_for_id(id=id) for id in ids]
@@ -74,10 +76,6 @@ def s3_sync(ids: List[str] = DEFAULT_IDS):
         backoff_coefficient=1.0,
         initial_delay=60.0,
     ),
-    mounts=[
-        CONFIG_MOUNT,
-        modal.Mount.from_local_dir('assets/', remote_path='/root/assets'),
-    ],
 )
 def update_dashboards(ids: List[str] = DEFAULT_IDS, dry_run: bool = False):
     logging.info(f'Starting ETL process for ids: {", ".join(map(str, ids))}.')
