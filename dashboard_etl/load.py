@@ -96,6 +96,10 @@ class GoogleSheetDashboard:
             and len(self.worst_picks_df) > 1
         )
 
+        self.better_picks_row_num = (
+            5 + len(self.scoreboard_df) + 2
+        )  # 3 for top rows, len of scoreboard and 2 rows of column names
+
         if self.add_worst_picks:
             self.worst_picks_df_height = (
                 len(self.released_movies_df) - len(self.scoreboard_df) - 3
@@ -103,11 +107,19 @@ class GoogleSheetDashboard:
 
             self.worst_picks_df = self.worst_picks_df.head(self.worst_picks_df_height)
 
+            # replace the row number in the format config with the better picks row number
             self.dashboard_elements.append(
                 (
                     self.worst_picks_df,
-                    'B12',
-                    load_format_config('assets/worst_picks_format.json'),
+                    f'B{self.better_picks_row_num}',
+                    {
+                        key.replace('12', str(self.better_picks_row_num)).replace(
+                            '13', str(self.better_picks_row_num + 1)
+                        ): value
+                        for key, value in load_format_config(
+                            'assets/worst_picks_format.json'
+                        ).items()
+                    },
                 )
             )
 
@@ -188,7 +200,7 @@ def update_dashboard(gsheet_dashboard: GoogleSheetDashboard) -> None:
 
     if gsheet_dashboard.add_worst_picks:
         gsheet_dashboard.worksheet.format(
-            'B12:G12',
+            f'B{gsheet_dashboard.better_picks_row_num}:G{gsheet_dashboard.better_picks_row_num}',
             {
                 'horizontalAlignment': 'CENTER',
                 'textFormat': {
@@ -258,12 +270,17 @@ def update_titles(gsheet_dashboard: GoogleSheetDashboard) -> None:
     gsheet_dashboard.worksheet.merge_cells('I2:X2')
 
     if gsheet_dashboard.add_worst_picks:
-        gsheet_dashboard.worksheet.update(values=[['Worst Picks']], range_name='B11')
+        worst_picks_row_num = gsheet_dashboard.better_picks_row_num - 1
+        gsheet_dashboard.worksheet.update(
+            values=[['Worst Picks']], range_name=f'B{worst_picks_row_num}'
+        )
         gsheet_dashboard.worksheet.format(
-            'B11',
+            f'B{worst_picks_row_num}',
             {'horizontalAlignment': 'CENTER', 'textFormat': {'bold': True}},
         )
-        gsheet_dashboard.worksheet.merge_cells('B11:G11')
+        gsheet_dashboard.worksheet.merge_cells(
+            f'B{worst_picks_row_num}:G{worst_picks_row_num}'
+        )
 
 
 def apply_conditional_formatting(gsheet_dashboard: GoogleSheetDashboard) -> None:
