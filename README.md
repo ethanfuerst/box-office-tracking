@@ -130,7 +130,7 @@ bucket:
 1. Download this repo, either by cloning it or downloading the zip file.
 2. Set up a [modal](https://modal.com/) account.
 3. (Optional) Set up a S3 bucket to store the box office data. I like to use [Digital Ocean Spaces](https://www.digitalocean.com/products/spaces).
-4. Create a google sheet with a tab called "Dashboard". Follow this guide to [set up APIaccess to this sheet](https://docs.gspread.org/en/latest/oauth2.html#for-bots-using-service-account).
+4. Create a google sheet with a tab called "Dashboard". Follow this guide to [set up API access to this sheet](https://docs.gspread.org/en/latest/oauth2.html#for-bots-using-service-account).
 5. Create a `.env` file in the root directory that follows the format above.
 6. Create a `config/config.yml` file in the root directory that follows the format above.
 7. Add your draft data to the `assets/<folder_name>` folder. See the section above to follow the format for these files.
