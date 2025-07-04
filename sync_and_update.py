@@ -3,7 +3,6 @@ import logging
 from typing import List
 
 import modal
-from modal.runner import deploy_app
 
 from boxofficemojo_etl.etl import extract_worldwide_box_office_data
 from dashboard_etl.extract import extract
