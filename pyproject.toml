@@ -1,25 +1,27 @@
-[tool.poetry]
+[project]
 name = "box-office-tracking"
 version = "0.1.0"
 description = "Tracking a box office draft with data from Box Office Mojo."
-authors = ["Ethan Fuerst"]
+authors = [{ name = "Ethan Fuerst" }]
+requires-python = ">=3.10,<3.11"
 readme = "README.md"
-package-mode = false
+dependencies = [
+    "gspread>=5.12.4,<6",
+    "pandas>=2.2.0,<3",
+    "gspread-formatting>=1.1.2,<2",
+    "duckdb>=1.1.3,<2",
+    "modal>=1.0.0,<2",
+    "python-dotenv>=1.0.1,<2",
+    "sqlfluff>=3.3.0,<4",
+    "lxml>=5.3.0,<6",
+]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-gspread = "^5.12.4"
-pandas = "^2.2.0"
-gspread-formatting = "^1.1.2"
-duckdb = "^1.1.3"
-modal = "^1.0.0"
-python-dotenv = "^1.0.1"
-sqlfluff = "^3.3.0"
-lxml = "^5.3.0"
+[tool.uv]
+package = false
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [tool.black]
 line-length = 88

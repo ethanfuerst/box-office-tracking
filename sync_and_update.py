@@ -19,7 +19,7 @@ app = modal.App('box-office-tracking')
 
 modal_image = (
     modal.Image.debian_slim(python_version='3.10')
-    .poetry_install_from_file(poetry_pyproject_toml='pyproject.toml')
+    .pip_install_from_pyproject('pyproject.toml')
     .add_local_dir('config/', remote_path='/root/config')
     .add_local_dir('assets/', remote_path='/root/assets')
     .add_local_python_source('boxofficemojo_etl', 'dashboard_etl', 'utils')

@@ -9,8 +9,8 @@ log() {
     echo "$(date '+%Y-%m-%d %H:%M:%S') - $message"
 }
 
-if ! command -v poetry &> /dev/null; then
-    log "Poetry is not installed. Please install it first." >&2
+if ! command -v uv &> /dev/null; then
+    log "uv is not installed. Please install it first." >&2
     exit 1
 fi
 
@@ -20,8 +20,14 @@ if ! command -v modal &> /dev/null; then
 fi
 
 log "Starting deployment of $FILE..."
+# Install dependencies using uv
+uv sync
 
-poetry run modal deploy "$FILE"
+# Check if modal is available
+uv run modal --version
+
+# Deploy using uv
+uv run modal deploy "$FILE"
 
 if [ $? -eq 0 ]; then
     log "Deployment completed successfully."
