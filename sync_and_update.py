@@ -4,14 +4,14 @@ from typing import List
 
 import modal
 
-from boxofficemojo_etl.etl import extract_worldwide_box_office_data
-from dashboard_etl.extract import extract
-from dashboard_etl.load import load
-from dashboard_etl.transform import transform
-from utils.check_config_files import validate_config
-from utils.db_connection import DuckDBConnection
-from utils.logging_config import setup_logging
-from utils.read_config import get_all_ids_from_config, get_config_for_id
+from src.boxofficemojo_etl.etl import extract_worldwide_box_office_data
+from src.dashboard_etl.extract import extract
+from src.dashboard_etl.load import load
+from src.dashboard_etl.transform import transform
+from src.utils.check_config_files import validate_config
+from src.utils.db_connection import DuckDBConnection
+from src.utils.logging_config import setup_logging
+from src.utils.read_config import get_all_ids_from_config, get_config_for_id
 
 setup_logging()
 
@@ -20,9 +20,9 @@ app = modal.App('box-office-tracking')
 modal_image = (
     modal.Image.debian_slim(python_version='3.10')
     .pip_install_from_pyproject('pyproject.toml')
-    .add_local_dir('config/', remote_path='/root/config')
-    .add_local_dir('assets/', remote_path='/root/assets')
-    .add_local_python_source('boxofficemojo_etl', 'dashboard_etl', 'utils')
+    .add_local_dir('src/config/', remote_path='/root/src/config')
+    .add_local_dir('src/assets/', remote_path='/root/src/assets')
+    .add_local_python_source('src')
 )
 
 DEFAULT_IDS = get_all_ids_from_config()

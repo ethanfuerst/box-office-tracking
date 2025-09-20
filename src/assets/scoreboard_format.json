@@ -1,0 +1,38 @@
+{
+    "_comment": "Format for scoreboard",
+    "B4:G4": {
+        "_comment": "Column Titles",
+        "horizontalAlignment": "CENTER",
+        "textFormat": {
+            "fontSize": 12
+        }
+    },
+    "B5:B9": {
+        "_comment": "Name",
+        "horizontalAlignment": "LEFT"
+    },
+    "C5:C9": {
+        "_comment": "Scored Revenue",
+        "horizontalAlignment": "RIGHT",
+        "numberFormat": {
+            "type": "CURRENCY",
+            "pattern": "$#,##0"
+        }
+    },
+    "F5:F9": {
+        "_comment": "% Optimal Picks",
+        "horizontalAlignment": "RIGHT",
+        "numberFormat": {
+            "type": "PERCENT",
+            "pattern": "#0.0#%"
+        }
+    },
+    "G5:G9": {
+        "_comment": "Unadjusted Revenue",
+        "horizontalAlignment": "RIGHT",
+        "numberFormat": {
+            "type": "CURRENCY",
+            "pattern": "$#,##0"
+        }
+    }
+}

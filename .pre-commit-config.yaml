@@ -14,10 +14,3 @@ repos:
   hooks:
   - id: isort
     additional_dependencies: [toml]
-- repo: https://github.com/sqlfluff/sqlfluff
-  rev: 3.3.0
-  hooks:
-    - id: sqlfluff-lint
-      args: ["--config", "./pyproject.toml", "--dialect", "duckdb"]
-    - id: sqlfluff-fix
-      args: ["--config", "./pyproject.toml", "--dialect", "duckdb"]
