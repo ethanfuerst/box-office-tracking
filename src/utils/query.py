@@ -5,8 +5,10 @@ from pandas import DataFrame
 from src.utils.db_connection import DuckDBConnection
 
 
-def temp_table_to_df(
-    config: Dict, table: str, columns: Optional[List[str]] = None
+def table_to_df(
+    config: Dict,
+    table: str,
+    columns: Optional[List[str]] = None,
 ) -> DataFrame:
     duckdb_con = DuckDBConnection(config)
 
@@ -20,10 +22,3 @@ def temp_table_to_df(
     df = df.replace([float('inf'), float('-inf'), float('nan')], None)
 
     return df
-
-
-def query_to_str(query_location: str) -> str:
-    with open(query_location, 'r') as file:
-        query = file.read().replace('\n', ' ').replace('\t', ' ')
-
-    return query

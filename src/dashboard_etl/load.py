@@ -28,7 +28,7 @@ class GoogleSheetDashboard:
         )
         self.dashboard_name = config['name']
         self.sheet_name = config['sheet_name']
-        self.released_movies_df = temp_table_to_df(
+        self.released_movies_df = table_to_df(
             config,
             'combined.base_query',
             columns=[
@@ -51,7 +51,7 @@ class GoogleSheetDashboard:
             ],
         )
 
-        self.scoreboard_df = temp_table_to_df(
+        self.scoreboard_df = table_to_df(
             config,
             'dashboards.scoreboard',
             columns=[
@@ -64,7 +64,7 @@ class GoogleSheetDashboard:
             ],
         )
 
-        self.worst_picks_df = temp_table_to_df(
+        self.worst_picks_df = table_to_df(
             config,
             'dashboards.worst_picks',
             columns=[
@@ -301,7 +301,7 @@ def apply_conditional_formatting(gsheet_dashboard: GoogleSheetDashboard) -> None
 
 
 def log_missing_movies(gsheet_dashboard: GoogleSheetDashboard) -> None:
-    draft_df = temp_table_to_df(
+    draft_df = table_to_df(
         gsheet_dashboard.config,
         'cleaned.drafter',
     )

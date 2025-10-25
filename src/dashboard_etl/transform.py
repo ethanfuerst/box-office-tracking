@@ -1,4 +1,3 @@
-import glob
 import logging
 from typing import Dict
 
@@ -8,8 +7,6 @@ from src import project_root
 from src.utils.logging_config import setup_logging
 
 setup_logging()
-
-from src.utils.db_connection import DuckDBConnection
 
 
 def transform(config: Dict) -> None:

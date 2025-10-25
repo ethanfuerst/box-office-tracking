@@ -7,8 +7,6 @@ import pandas as pd
 from pandas import read_html
 from sqlmesh import ExecutionContext, model
 
-from src.utils.db_connection import DuckDBConnection
-
 
 @model(
     'raw.box_office_mojo_dump',
