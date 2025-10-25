@@ -8,8 +8,12 @@ load_dotenv()
 
 class DuckDBConnection:
     def __init__(self, config, need_write_access=False):
+        # Create dashboard-specific database file
+        dashboard_id = config.get('dashboard_id', 'default')
+        database_name = f'box_office_db_{dashboard_id}.duckdb'
+
         self.connection = duckdb.connect(
-            database='box_office_db.duckdb',
+            database=database_name,
             read_only=False,
         )
         self.need_write_access = need_write_access

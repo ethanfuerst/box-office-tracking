@@ -2,18 +2,17 @@ import json
 import logging
 import os
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict
 
 import gspread_formatting as gsf
 from dotenv import load_dotenv
-from gspread import Worksheet, service_account_from_dict
-from pandas import DataFrame, read_csv
+from gspread import service_account_from_dict
 
-from utils.db_connection import DuckDBConnection
-from utils.format import load_format_config
-from utils.gspread_format import df_to_sheet
-from utils.logging_config import setup_logging
-from utils.query import temp_table_to_df
+from src.utils.db_connection import DuckDBConnection
+from src.utils.format import load_format_config
+from src.utils.gspread_format import df_to_sheet
+from src.utils.logging_config import setup_logging
+from src.utils.query import table_to_df
 
 setup_logging()
 
@@ -29,9 +28,9 @@ class GoogleSheetDashboard:
         )
         self.dashboard_name = config['name']
         self.sheet_name = config['sheet_name']
-        self.released_movies_df = temp_table_to_df(
+        self.released_movies_df = table_to_df(
             config,
-            'base_query',
+            'combined.base_query',
             columns=[
                 'Rank',
                 'Title',
@@ -52,9 +51,9 @@ class GoogleSheetDashboard:
             ],
         )
 
-        self.scoreboard_df = temp_table_to_df(
+        self.scoreboard_df = table_to_df(
             config,
-            'scoreboard',
+            'dashboards.scoreboard',
             columns=[
                 'Name',
                 'Scored Revenue',
@@ -65,9 +64,9 @@ class GoogleSheetDashboard:
             ],
         )
 
-        self.worst_picks_df = temp_table_to_df(
+        self.worst_picks_df = table_to_df(
             config,
-            'worst_picks',
+            'dashboards.worst_picks',
             columns=[
                 'Rank',
                 'Title',
@@ -82,12 +81,12 @@ class GoogleSheetDashboard:
             (
                 self.scoreboard_df,
                 'B4',
-                load_format_config('assets/scoreboard_format.json'),
+                load_format_config('src/assets/scoreboard_format.json'),
             ),
             (
                 self.released_movies_df,
                 'I4',
-                load_format_config('assets/released_movies_format.json'),
+                load_format_config('src/assets/released_movies_format.json'),
             ),
         ]
 
@@ -117,7 +116,7 @@ class GoogleSheetDashboard:
                             '13', str(self.better_picks_row_num + 1)
                         ): value
                         for key, value in load_format_config(
-                            'assets/worst_picks_format.json'
+                            'src/assets/worst_picks_format.json'
                         ).items()
                     },
                 )
@@ -302,9 +301,9 @@ def apply_conditional_formatting(gsheet_dashboard: GoogleSheetDashboard) -> None
 
 
 def log_missing_movies(gsheet_dashboard: GoogleSheetDashboard) -> None:
-    draft_df = temp_table_to_df(
+    draft_df = table_to_df(
         gsheet_dashboard.config,
-        'drafter',
+        'cleaned.drafter',
     )
     released_movies = [
         str(movie) for movie in gsheet_dashboard.released_movies_df['Title'].tolist()
@@ -328,7 +327,7 @@ def log_min_revenue_info(gsheet_dashboard: GoogleSheetDashboard, config: Dict) -
         f'''
         with most_recent_data as (
             select title, revenue
-            from box_office_mojo_dump where year_part = {gsheet_dashboard.year}
+            from raw.box_office_mojo_dump where year_part = {gsheet_dashboard.year}
             qualify rank() over (order by loaded_date desc) = 1
             order by 2 desc
         )
@@ -347,13 +346,13 @@ def log_min_revenue_info(gsheet_dashboard: GoogleSheetDashboard, config: Dict) -
             f'''
             with raw_data as (
                 select title, revenue
-                from box_office_mojo_dump
+                from raw.box_office_mojo_dump
                 where year_part = {gsheet_dashboard.year}
                 qualify row_number() over (partition by title order by loaded_date desc) = 1
             )
 
             select raw_data.title from raw_data
-            inner join base_query
+            inner join combined.base_query as base_query
                 on raw_data.title = base_query.title
             where raw_data.revenue <= {min_revenue_of_most_recent_data}
             '''

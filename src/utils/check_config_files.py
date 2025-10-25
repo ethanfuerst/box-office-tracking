@@ -3,9 +3,8 @@ import os
 from typing import Dict
 
 import lxml
-import pandas as pd
 
-from utils.logging_config import setup_logging
+from src.utils.logging_config import setup_logging
 
 setup_logging()
 

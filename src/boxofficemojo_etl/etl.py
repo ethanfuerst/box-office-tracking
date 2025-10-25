@@ -1,14 +1,13 @@
 import datetime
 import logging
-import os
 import ssl
 from typing import Dict
 
-from pandas import DataFrame, read_html
+from pandas import read_html
 
-from utils.db_connection import DuckDBConnection
-from utils.logging_config import setup_logging
-from utils.s3_utils import load_df_to_s3_table
+from src.utils.db_connection import DuckDBConnection
+from src.utils.logging_config import setup_logging
+from src.utils.s3_utils import load_df_to_s3_table
 
 S3_DATE_FORMAT = '%Y-%m-%d'
 setup_logging()
