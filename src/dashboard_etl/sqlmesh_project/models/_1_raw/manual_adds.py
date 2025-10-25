@@ -10,20 +10,20 @@ from utils.gspread_utils import get_worksheet
 
 
 @model(
-    'raw.drafter',
-    owner='janet',
-    cron='@daily',
+    'raw.manual_adds',
     columns={
-        'round': 'int',
-        'overall_pick': 'int',
-        'name': 'text',
-        'movie': 'text',
+        'title': 'text',
+        'revenue': 'int',
+        'domestic_rev': 'int',
+        'foreign_rev': 'int',
+        'release_date': 'date',
     },
     column_descriptions={
-        'round': 'Round number of draft',
-        'overall_pick': 'Overall pick number of draft',
-        'name': 'Name of the person picking',
-        'movie': 'Movie picked',
+        'title': 'Title of the movie',
+        'revenue': 'Revenue of the movie',
+        'domestic_rev': 'Domestic revenue of the movie',
+        'foreign_rev': 'Foreign revenue of the movie',
+        'release_date': 'Date the movie was released',
     },
 )
 def execute(
@@ -38,9 +38,10 @@ def execute(
     if not sheet_name:
         raise ValueError('GSPREAD_SHEET_NAME must be set as environment variable')
 
-    worksheet = get_worksheet(sheet_name, 'Draft')
+    worksheet = get_worksheet(sheet_name, 'Manual Adds')
 
     raw = worksheet.get_all_values()
     df = DataFrame(data=raw[1:], columns=raw[0]).astype(str)
+    df['release_date'] = pd.to_datetime(df['release_date'], format='%m/%d/%Y')
 
     return df

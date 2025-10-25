@@ -10,20 +10,16 @@ from utils.gspread_utils import get_worksheet
 
 
 @model(
-    'raw.drafter',
-    owner='janet',
-    cron='@daily',
+    'raw.multipliers_and_exclusions',
     columns={
-        'round': 'int',
-        'overall_pick': 'int',
-        'name': 'text',
-        'movie': 'text',
+        'value': 'text',
+        'multiplier': 'double',
+        'type': 'text',
     },
     column_descriptions={
-        'round': 'Round number of draft',
-        'overall_pick': 'Overall pick number of draft',
-        'name': 'Name of the person picking',
-        'movie': 'Movie picked',
+        'value': 'Value of the record',
+        'multiplier': 'Multiplier of the record',
+        'type': 'Type of the record',
     },
 )
 def execute(
@@ -38,9 +34,10 @@ def execute(
     if not sheet_name:
         raise ValueError('GSPREAD_SHEET_NAME must be set as environment variable')
 
-    worksheet = get_worksheet(sheet_name, 'Draft')
+    worksheet = get_worksheet(sheet_name, 'Multipliers and Exclusions')
 
     raw = worksheet.get_all_values()
     df = DataFrame(data=raw[1:], columns=raw[0]).astype(str)
+    df['multiplier'] = df['multiplier'].replace('', 0).astype(float)
 
     return df

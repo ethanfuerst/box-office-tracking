@@ -4,6 +4,7 @@ MODEL (
 );
 
 select
-    movie
+    value as movie
     , multiplier
-from raw.movie_multiplier_overrides
+from raw.multipliers_and_exclusions
+where type = 'movie'
