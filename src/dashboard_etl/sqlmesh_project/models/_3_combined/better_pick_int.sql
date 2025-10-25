@@ -3,9 +3,6 @@ MODEL (
   kind FULL
 );
 
--- External tables referenced:
--- @EXTERNAL round_multiplier_overrides
-
 select
     picks.title
     , picks.overall_pick
@@ -29,10 +26,6 @@ left join combined.base_query_int as better_pick
         and (
             (picks.overall_pick < better_pick.overall_pick)
             or (better_pick.overall_pick is null)
-        )
-        and (
-            (picks.drafted_by != better_pick.drafted_by)
-            or (better_pick.drafted_by is null)
         )
 left join cleaned.round_multiplier_overrides as round_multiplier_overrides
     on picks.round = round_multiplier_overrides.round

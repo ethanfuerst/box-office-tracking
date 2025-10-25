@@ -3,7 +3,6 @@ MODEL (
   kind FULL
 );
 
-
 with raw_data as (
     select
         title
