@@ -1,5 +1,5 @@
 MODEL (
-  name box_office_tracking.base_query,
+  name combined.base_query,
   kind FULL
 );
 
@@ -40,8 +40,8 @@ select
             then 'Yes'
         else 'No'
     end as still_in_theaters
-from box_office_tracking.base_query_int as base_query_int
-left join box_office_tracking.better_pick_final as better_pick_final
+from combined.base_query_int as base_query_int
+left join combined.better_pick_final as better_pick_final
     on base_query_int.overall_pick = better_pick_final.overall_pick
 where base_query_int.drafted_by is not null
 order by 1 asc

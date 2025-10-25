@@ -30,7 +30,7 @@ class GoogleSheetDashboard:
         self.sheet_name = config['sheet_name']
         self.released_movies_df = temp_table_to_df(
             config,
-            'box_office_tracking.base_query',
+            'combined.base_query',
             columns=[
                 'Rank',
                 'Title',
@@ -53,7 +53,7 @@ class GoogleSheetDashboard:
 
         self.scoreboard_df = temp_table_to_df(
             config,
-            'box_office_tracking.scoreboard',
+            'dashboards.scoreboard',
             columns=[
                 'Name',
                 'Scored Revenue',
@@ -66,7 +66,7 @@ class GoogleSheetDashboard:
 
         self.worst_picks_df = temp_table_to_df(
             config,
-            'box_office_tracking.worst_picks',
+            'dashboards.worst_picks',
             columns=[
                 'Rank',
                 'Title',
@@ -303,7 +303,7 @@ def apply_conditional_formatting(gsheet_dashboard: GoogleSheetDashboard) -> None
 def log_missing_movies(gsheet_dashboard: GoogleSheetDashboard) -> None:
     draft_df = temp_table_to_df(
         gsheet_dashboard.config,
-        'box_office_tracking.drafter',
+        'cleaned.drafter',
     )
     released_movies = [
         str(movie) for movie in gsheet_dashboard.released_movies_df['Title'].tolist()
@@ -327,7 +327,7 @@ def log_min_revenue_info(gsheet_dashboard: GoogleSheetDashboard, config: Dict) -
         f'''
         with most_recent_data as (
             select title, revenue
-            from box_office_mojo_dump where year_part = {gsheet_dashboard.year}
+            from raw.box_office_mojo_dump where year_part = {gsheet_dashboard.year}
             qualify rank() over (order by loaded_date desc) = 1
             order by 2 desc
         )
@@ -346,13 +346,13 @@ def log_min_revenue_info(gsheet_dashboard: GoogleSheetDashboard, config: Dict) -
             f'''
             with raw_data as (
                 select title, revenue
-                from box_office_mojo_dump
+                from raw.box_office_mojo_dump
                 where year_part = {gsheet_dashboard.year}
                 qualify row_number() over (partition by title order by loaded_date desc) = 1
             )
 
             select raw_data.title from raw_data
-            inner join box_office_tracking.base_query as base_query
+            inner join combined.base_query as base_query
                 on raw_data.title = base_query.title
             where raw_data.revenue <= {min_revenue_of_most_recent_data}
             '''

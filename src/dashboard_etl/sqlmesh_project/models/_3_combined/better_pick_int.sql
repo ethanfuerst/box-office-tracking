@@ -1,5 +1,5 @@
 MODEL (
-  name box_office_tracking.better_pick_int,
+  name combined.better_pick_int,
   kind FULL
 );
 
@@ -22,8 +22,8 @@ select
             , 1
         ) * better_pick.revenue
     ) - picks.scored_revenue as missed_revenue
-from box_office_tracking.base_query_int as picks
-left join box_office_tracking.base_query_int as better_pick
+from combined.base_query_int as picks
+left join combined.base_query_int as better_pick
     on
         picks.scored_revenue < better_pick.scored_revenue
         and (
@@ -34,6 +34,6 @@ left join box_office_tracking.base_query_int as better_pick
             (picks.drafted_by != better_pick.drafted_by)
             or (better_pick.drafted_by is null)
         )
-left join round_multiplier_overrides
+left join cleaned.round_multiplier_overrides as round_multiplier_overrides
     on picks.round = round_multiplier_overrides.round
 where (missed_revenue > 0 or missed_revenue is null)

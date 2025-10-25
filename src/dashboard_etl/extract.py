@@ -33,7 +33,7 @@ def get_draft_data(config: Dict) -> None:
     duckdb_con = DuckDBConnection(config)
 
     duckdb_con.connection.register('df', df)
-    duckdb_con.execute('create or replace table drafter as select * from df')
+    duckdb_con.execute('create or replace table raw_drafter as select * from df')
 
     duckdb_con.close()
 
@@ -44,7 +44,7 @@ def get_movie_data(config: Dict) -> None:
     if config['update_type'] == 's3':
         duckdb_con.execute(
             f'''
-            create or replace table box_office_mojo_dump as (
+            create or replace table raw_box_office_mojo_dump as (
                 with all_data as (
                     select
                         *
@@ -65,7 +65,7 @@ def get_movie_data(config: Dict) -> None:
             '''
         )
 
-        row_count = 'select count(*) from box_office_mojo_dump'
+        row_count = 'select count(*) from raw_box_office_mojo_dump'
         logging.info(
             f'Read {duckdb_con.query(row_count).fetchnumpy()["count_star()"][0]} rows with query from s3 bucket'
         )
@@ -82,13 +82,15 @@ def get_movie_data(config: Dict) -> None:
             logging.info(f'Read {len(df)} rows with scrape from Box Office Mojo')
 
             duckdb_con.connection.register('df', df)
-            duckdb_con.execute("CREATE OR REPLACE TABLE all_data AS SELECT * FROM df")
+            duckdb_con.execute(
+                "CREATE OR REPLACE TABLE raw_all_data AS SELECT * FROM df"
+            )
 
-            logging.info('DataFrame loaded into DuckDB table all_data.')
+            logging.info('DataFrame loaded into DuckDB table raw_all_data.')
 
             duckdb_con.execute(
                 f'''
-                create or replace table box_office_mojo_dump as (
+                create or replace table raw_box_office_mojo_dump as (
                     select
                         "Release Group" as title
                         , coalesce(try_cast(replace("Worldwide"[2:], ',', '') as integer), 0) as revenue
@@ -96,11 +98,11 @@ def get_movie_data(config: Dict) -> None:
                         , coalesce(try_cast(replace("Foreign"[2:], ',', '') as integer), 0) as foreign_rev
                         , current_date as loaded_date
                         , {year} as year_part
-                    from all_data
+                    from raw_all_data
                 )
                 '''
             )
-            logging.info('DataFrame loaded into DuckDB table box_office_mojo_dump.')
+            logging.info('DataFrame loaded into DuckDB table raw_box_office_mojo_dump.')
 
         except Exception as e:
             logging.error(f'Failed to fetch data: {e}')

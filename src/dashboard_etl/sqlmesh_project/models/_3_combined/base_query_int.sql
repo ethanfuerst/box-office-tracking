@@ -1,15 +1,8 @@
 MODEL (
-  name box_office_tracking.base_query_int,
+  name combined.base_query_int,
   kind FULL
 );
 
--- External tables referenced:
--- @EXTERNAL box_office_mojo_dump
--- @EXTERNAL draft_year_exclusions
--- @EXTERNAL manual_adds
--- @EXTERNAL drafter
--- @EXTERNAL round_multiplier_overrides
--- @EXTERNAL movie_multiplier_overrides
 
 with raw_data as (
     select
@@ -22,10 +15,10 @@ with raw_data as (
         , min(loaded_date) over (
             partition by title
         ) as first_seen_date
-    from box_office_mojo_dump
+    from cleaned.box_office_mojo_dump
     where title not in (
-        select distinct draft_year_exclusions.movie
-        from draft_year_exclusions
+        select distinct movie
+        from cleaned.draft_year_exclusions
     )
 )
 
@@ -69,7 +62,7 @@ with raw_data as (
             and days_since_last_update <= 7
             , false
         ) as still_in_theaters
-    from box_office_mojo_dump
+    from cleaned.box_office_mojo_dump
     qualify row_number() over (
         partition by title
         order by loaded_date desc
@@ -86,20 +79,20 @@ with raw_data as (
     from parsed_data
     where
         parsed_data.title not in (
-            select distinct manual_adds.title
-            from manual_adds
+            select distinct title
+            from cleaned.manual_adds
         )
     group by 1
 
     union all
 
     select
-        manual_adds.title
-        , manual_adds.revenue
-        , manual_adds.domestic_rev
-        , manual_adds.foreign_rev
-        , manual_adds.first_seen_date
-    from manual_adds
+        title
+        , revenue
+        , domestic_rev
+        , foreign_rev
+        , first_seen_date
+    from cleaned.manual_adds
 )
 
 , base_table as (
@@ -157,21 +150,21 @@ select
     ) as foreign_pct
     , base_table.first_seen_date
     , case
-        when base_table.title in (
-            select distinct manual_adds.title
-            from manual_adds
-        ) then false
+    when base_table.title in (
+        select distinct title
+        from cleaned.manual_adds
+    ) then false
         else coalesce(
             currently_updating.still_in_theaters
             , false
         )
     end as still_in_theaters
 from base_table
-left join box_office_tracking.drafter as drafter
+left join cleaned.drafter as drafter
     on base_table.title = drafter.movie
 left join currently_updating
     on base_table.title = currently_updating.title
-left join round_multiplier_overrides
+left join cleaned.round_multiplier_overrides as round_multiplier_overrides
     on drafter.round = round_multiplier_overrides.round
-left join movie_multiplier_overrides
+left join cleaned.movie_multiplier_overrides as movie_multiplier_overrides
     on base_table.title = movie_multiplier_overrides.movie

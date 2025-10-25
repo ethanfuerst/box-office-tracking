@@ -62,55 +62,6 @@ def load_override_tables(config: Dict) -> None:
         'create or replace table raw_manual_adds as select * from df_manual_adds;'
     )
 
-    duckdb_con.execute(
-        '''
-        create or replace table movie_multiplier_overrides as (
-            select
-                try_cast(value as varchar) as movie
-                , try_cast(multiplier as double) as multiplier
-            from raw_multipliers_and_exclusions
-            where try_cast(type as varchar) = 'movie'
-        );
-        '''
-    )
-
-    duckdb_con.execute(
-        '''
-        create or replace table round_multiplier_overrides as (
-            select
-                try_cast(value as varchar) as round
-                , try_cast(multiplier as double) as multiplier
-            from raw_multipliers_and_exclusions
-            where try_cast(type as varchar) = 'round'
-        );
-        '''
-    )
-
-    duckdb_con.execute(
-        '''
-        create or replace table draft_year_exclusions as (
-            select
-                try_cast(value as varchar) as movie
-            from raw_multipliers_and_exclusions
-            where try_cast(type as varchar) = 'exclusion'
-        );
-        '''
-    )
-
-    duckdb_con.execute(
-        '''
-        create or replace table manual_adds as (
-            select
-                try_cast(title as varchar) as title
-                , try_cast(revenue as integer) as revenue
-                , try_cast(domestic_rev as integer) as domestic_rev
-                , try_cast(foreign_rev as integer) as foreign_rev
-                , try_cast(release_date as date) as first_seen_date
-            from raw_manual_adds
-        );
-        '''
-    )
-
     duckdb_con.close()
 
 

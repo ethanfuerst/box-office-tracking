@@ -1,5 +1,5 @@
 MODEL (
-  name box_office_tracking.worst_picks,
+  name dashboards.worst_picks,
   kind FULL
 );
 
@@ -8,7 +8,7 @@ with better_picks as (
         title
         , count(distinct better_pick_title) as number_of_better_picks
         , max(missed_revenue) as max_better_pick_revenue
-    from box_office_tracking.better_pick_int
+    from combined.better_pick_int
     group by 1
 )
 
@@ -26,7 +26,7 @@ with better_picks as (
         , base_query.overall_pick
         , better_picks.number_of_better_picks
         , better_picks.max_better_pick_revenue as missed_revenue
-    from box_office_tracking.base_query as base_query
+    from combined.base_query as base_query
     inner join better_picks
         on base_query.title = better_picks.title
     where better_picks.number_of_better_picks > 0

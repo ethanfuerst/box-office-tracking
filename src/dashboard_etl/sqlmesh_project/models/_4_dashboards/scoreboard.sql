@@ -1,5 +1,5 @@
 MODEL (
-  name box_office_tracking.scoreboard,
+  name dashboards.scoreboard,
   kind FULL
 );
 
@@ -17,7 +17,7 @@ select
         round(correctly_drafted_pick_count / num_released, 4), 0
     ) as correct_pick_pct
     , sum(revenue) as unadjusted_revenue
-from box_office_tracking.base_query
+from combined.base_query
 where drafted_by is not null
 group by
     1

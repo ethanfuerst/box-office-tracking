@@ -1,5 +1,5 @@
 MODEL (
-  name box_office_tracking.drafter,
+  name raw.drafter,
   kind FULL
 );
 
@@ -11,4 +11,4 @@ select
     , name
     , overall_pick
     , round
-from drafter
+from raw_drafter
