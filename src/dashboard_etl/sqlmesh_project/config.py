@@ -9,7 +9,6 @@ from sqlmesh.core.config import (
 
 from src import project_root
 
-# Get dashboard_id from environment or use default
 dashboard_id = os.getenv('DASHBOARD_ID', 'default')
 year = os.getenv('YEAR', '2025')
 
@@ -27,12 +26,19 @@ config = Config(
                         'type': 'S3',
                         'region': 'nyc3',
                         'endpoint': 'nyc3.digitaloceanspaces.com',
-                        'key_id': os.getenv('READ_ACCESS_KEY_ID'),
-                        'secret': os.getenv('READ_SECRET_ACCESS_KEY_ID'),
+                        'key_id': os.getenv(os.getenv('S3_READ_ACCESS_KEY_NAME')),
+                        'secret': os.getenv(
+                            os.getenv('S3_READ_SECRET_ACCESS_KEY_NAME')
+                        ),
                     },
                 ],
             )
         )
     },
-    variables={'dashboard_id': dashboard_id, 'year': year},
+    variables={
+        'dashboard_id': dashboard_id,
+        'year': year,
+        'update_type': os.getenv('UPDATE_TYPE', 's3'),
+        'bucket': os.getenv('BUCKET', ''),
+    },
 )

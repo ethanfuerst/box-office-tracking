@@ -5,7 +5,6 @@ from typing import List
 import modal
 
 from src.boxofficemojo_etl.etl import extract_worldwide_box_office_data
-from src.dashboard_etl.extract import extract
 from src.dashboard_etl.load import load
 from src.dashboard_etl.transform import transform
 from src.utils.check_config_files import validate_config
@@ -90,7 +89,6 @@ def update_dashboards(ids: List[str] = DEFAULT_IDS, dry_run: bool = False):
 
         duckdb_con = DuckDBConnection(config)
 
-        extract(config=config)
         transform(config=config)
         logging.info(f'All sql scripts have been executed for {id}.')
 
