@@ -9,6 +9,7 @@ with better_picks as (
         , count(distinct better_pick_title) as number_of_better_picks
         , max(missed_revenue) as max_better_pick_revenue
     from combined.better_pick_int
+    where not better_pick_drafted_by_someone_else
     group by 1
 )
 
