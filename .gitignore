@@ -164,4 +164,5 @@ config/
 assets/drafts/
 
 # DuckDB
-box_office_db.duckdb
+*.duckdb
+*.duckdb.wal

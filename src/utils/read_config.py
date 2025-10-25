@@ -118,6 +118,7 @@ def get_config_for_id(id: str) -> Dict:
     top_level_config = get_top_level_config()
 
     config = top_level_config['dashboards'][id]
+    config['dashboard_id'] = id
 
     bucket_config = top_level_config['bucket']
     config['bucket'] = bucket_config['bucket']

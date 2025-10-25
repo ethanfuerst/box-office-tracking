@@ -30,7 +30,7 @@ class GoogleSheetDashboard:
         self.sheet_name = config['sheet_name']
         self.released_movies_df = temp_table_to_df(
             config,
-            'base_query',
+            'box_office_tracking.base_query',
             columns=[
                 'Rank',
                 'Title',
@@ -53,7 +53,7 @@ class GoogleSheetDashboard:
 
         self.scoreboard_df = temp_table_to_df(
             config,
-            'scoreboard',
+            'box_office_tracking.scoreboard',
             columns=[
                 'Name',
                 'Scored Revenue',
@@ -66,7 +66,7 @@ class GoogleSheetDashboard:
 
         self.worst_picks_df = temp_table_to_df(
             config,
-            'worst_picks',
+            'box_office_tracking.worst_picks',
             columns=[
                 'Rank',
                 'Title',
@@ -303,7 +303,7 @@ def apply_conditional_formatting(gsheet_dashboard: GoogleSheetDashboard) -> None
 def log_missing_movies(gsheet_dashboard: GoogleSheetDashboard) -> None:
     draft_df = temp_table_to_df(
         gsheet_dashboard.config,
-        'drafter',
+        'box_office_tracking.drafter',
     )
     released_movies = [
         str(movie) for movie in gsheet_dashboard.released_movies_df['Title'].tolist()
@@ -352,7 +352,7 @@ def log_min_revenue_info(gsheet_dashboard: GoogleSheetDashboard, config: Dict) -
             )
 
             select raw_data.title from raw_data
-            inner join base_query
+            inner join box_office_tracking.base_query as base_query
                 on raw_data.title = base_query.title
             where raw_data.revenue <= {min_revenue_of_most_recent_data}
             '''

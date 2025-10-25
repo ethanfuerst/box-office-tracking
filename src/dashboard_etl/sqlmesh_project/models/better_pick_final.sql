@@ -1,0 +1,14 @@
+MODEL (
+  name box_office_tracking.better_pick_final,
+  kind FULL
+);
+
+select
+    overall_pick
+    , better_pick_title
+    , better_pick_scored_revenue
+from box_office_tracking.better_pick_int
+qualify row_number() over (
+    partition by overall_pick
+    order by better_pick_scored_revenue desc
+) = 1

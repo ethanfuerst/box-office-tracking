@@ -2,6 +2,9 @@ import glob
 import logging
 from typing import Dict
 
+from sqlmesh.core.context import Context
+
+from src import project_root
 from src.utils.logging_config import setup_logging
 
 setup_logging()
@@ -10,14 +13,18 @@ from src.utils.db_connection import DuckDBConnection
 
 
 def transform(config: Dict) -> None:
-    duckdb_con = DuckDBConnection(config)
+    # Set environment variables for SQLMesh config
+    import os
 
-    for sql_file in sorted(glob.glob('src/assets/*.sql')):
-        with open(sql_file, 'r') as f:
-            sql_content = f.read().replace('$year', str(config['year']))
+    os.environ['DASHBOARD_ID'] = config.get('dashboard_id', 'default')
+    os.environ['YEAR'] = str(config.get('year', 2025))
 
-        duckdb_con.execute(sql_content)
+    sqlmesh_context = Context(
+        paths=project_root / 'src' / 'dashboard_etl' / 'sqlmesh_project'
+    )
 
-        logging.info(f'Executed {sql_file}')
+    plan = sqlmesh_context.plan()
+    sqlmesh_context.apply(plan)
+    output = sqlmesh_context.run()
 
-    duckdb_con.close()
+    logging.info(output)
