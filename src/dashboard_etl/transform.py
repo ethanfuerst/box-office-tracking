@@ -18,6 +18,10 @@ def transform(config: Dict) -> None:
 
     os.environ['DASHBOARD_ID'] = config.get('dashboard_id', 'default')
     os.environ['YEAR'] = str(config.get('year', 2025))
+    os.environ['GSPREAD_CREDENTIALS_NAME'] = config.get(
+        'gspread_credentials_name', f'GSPREAD_CREDENTIALS_{config.get("year", 2025)}'
+    )
+    os.environ['GSPREAD_SHEET_NAME'] = config.get('sheet_name')
 
     sqlmesh_context = Context(
         paths=project_root / 'src' / 'dashboard_etl' / 'sqlmesh_project'

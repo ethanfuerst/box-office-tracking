@@ -29,7 +29,12 @@ config = Config(
                         'endpoint': 'nyc3.digitaloceanspaces.com',
                         'key_id': os.getenv('READ_ACCESS_KEY_ID'),
                         'secret': os.getenv('READ_SECRET_ACCESS_KEY_ID'),
-                    }
+                    },
+                    {
+                        'type': 'GSPREAD',
+                        'credentials_name': os.getenv('GSPREAD_CREDENTIALS_NAME'),
+                        'sheet_name': os.getenv('GSPREAD_SHEET_NAME'),
+                    },
                 ],
             )
         )
