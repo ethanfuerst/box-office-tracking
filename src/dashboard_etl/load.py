@@ -12,7 +12,7 @@ from src.utils.db_connection import DuckDBConnection
 from src.utils.format import load_format_config
 from src.utils.gspread_format import df_to_sheet
 from src.utils.logging_config import setup_logging
-from src.utils.query import temp_table_to_df
+from src.utils.query import table_to_df
 
 setup_logging()
 
