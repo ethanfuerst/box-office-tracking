@@ -8,16 +8,18 @@ from sqlmesh.core.config import (
 )
 
 from src import project_root
+from src.utils.read_config import get_config_for_id
 
 dashboard_id = os.getenv('DASHBOARD_ID', 'default')
 year = os.getenv('YEAR', '2025')
+config = get_config_for_id(dashboard_id)
 
 config = Config(
     model_defaults=ModelDefaultsConfig(dialect='duckdb'),
     gateways={
         'duckdb': GatewayConfig(
             connection=DuckDBConnectionConfig(
-                database=str(project_root / f'box_office_db_{dashboard_id}.duckdb'),
+                database=str(project_root / config.get('database_file')),
                 extensions=[
                     {'name': 'httpfs'},
                 ],

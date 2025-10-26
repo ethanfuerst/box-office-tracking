@@ -8,7 +8,6 @@ from src.boxofficemojo_etl.etl import extract_worldwide_box_office_data
 from src.dashboard_etl.load import load
 from src.dashboard_etl.transform import transform
 from src.utils.check_config_files import validate_config
-from src.utils.db_connection import DuckDBConnection
 from src.utils.logging_config import setup_logging
 from src.utils.read_config import get_all_ids_from_config, get_config_for_id
 
@@ -87,8 +86,6 @@ def update_dashboards(ids: List[str] = DEFAULT_IDS, dry_run: bool = False):
             )
             continue
 
-        duckdb_con = DuckDBConnection(config)
-
         transform(config=config)
         logging.info(f'All sql scripts have been executed for {id}.')
 
@@ -97,8 +94,6 @@ def update_dashboards(ids: List[str] = DEFAULT_IDS, dry_run: bool = False):
             load(config=config)
 
         logging.info(f'Completed ETL process for {id}.')
-
-        duckdb_con.close()
 
 
 if __name__ == '__main__':

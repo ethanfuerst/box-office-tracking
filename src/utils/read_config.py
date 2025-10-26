@@ -1,3 +1,4 @@
+import time
 from typing import Dict, List
 
 import yaml
@@ -21,6 +22,9 @@ def get_config_for_id(id: str) -> Dict:
 
     config = top_level_config['dashboards'][id]
     config['dashboard_id'] = id
+
+    timestamp = int(time.time())
+    config['database_file'] = f'box_office_db_{id}_{timestamp}.duckdb'
 
     bucket_config = top_level_config['bucket']
     config['bucket'] = bucket_config['bucket']
