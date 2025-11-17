@@ -28,7 +28,7 @@ def load_df_to_s3_table(
     )
 
     row_count_query = f'select count(*) from "{s3_file}";'
-    rows_loaded = duckdb_con.sql(row_count_query).fetchnumpy()["count_star()"][0]
+    rows_loaded = duckdb_con.sql(row_count_query).fetchnumpy()['count_star()'][0]
 
     logging.info(f'Updated {s3_file} with {rows_loaded} rows.')
 

@@ -3,15 +3,19 @@ import os
 import duckdb
 from dotenv import load_dotenv
 
+from src import project_root
+
 load_dotenv()
 
 
 class DuckDBConnection:
     def __init__(self, config, need_write_access=False):
-        database_name = config.get('database_file')
+        database_name = (
+            project_root / 'src' / 'duckdb_databases' / config.get('database_file')
+        )
 
         self.connection = duckdb.connect(
-            database=database_name,
+            database=str(database_name),
             read_only=False,
         )
         self.need_write_access = need_write_access
@@ -50,3 +54,6 @@ class DuckDBConnection:
 
     def close(self):
         self.connection.close()
+
+    def df(self, query):
+        return self.connection.query(query).df()

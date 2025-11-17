@@ -1,9 +1,9 @@
 [project]
 name = "box-office-tracking"
 version = "0.1.0"
-description = "Tracking a box office draft with data from Box Office Mojo."
+description = "Tracking box office data."
 authors = [{ name = "Ethan Fuerst" }]
-requires-python = ">=3.10,<3.11"
+requires-python = ">=3.12,<3.13"
 readme = "README.md"
 dependencies = [
     "gspread>=5.12.4,<6",
