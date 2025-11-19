@@ -60,6 +60,7 @@ def publish_tables_to_s3(duckdb_con: DuckDBConnection, bucket: str) -> None:
                 , coalesce(try_cast(replace(substring("Foreign", 2), ',', '') as integer), 0) as foreign_rev
                 , cast(scraped_date_from_s3 as date) as loaded_date
                 , cast(year_part_from_s3 as int) as year_part
+                , now() as published_timestamp_utc
             from all_data
         '''
     ).df()
