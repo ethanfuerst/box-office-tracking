@@ -10,7 +10,7 @@ load_dotenv()
 
 
 class DuckDBConnection:
-    def __init__(self, config: S3SyncConfig, need_write_access=False):
+    def __init__(self, config: S3SyncConfig):
         database_name = (
             project_root / 'src' / 'duckdb_databases' / 'box_office_tracking_db.duckdb'
         )
@@ -19,21 +19,17 @@ class DuckDBConnection:
             database=str(database_name),
             read_only=False,
         )
-        self.need_write_access = need_write_access
         self._configure_connection(config)
 
     def _configure_connection(self, config: S3SyncConfig):
-        access_type = 'write' if self.need_write_access else 'read'
-        s3_access_key_id_var_name = config.get_s3_access_key_id_var_name(access_type)
-        s3_secret_access_key_var_name = config.get_s3_secret_access_key_var_name(
-            access_type
-        )
+        s3_access_key_id_var_name = config.s3_access_key_id_var_name
+        s3_secret_access_key_var_name = config.s3_secret_access_key_var_name
 
         self.connection.execute(
             f'''
             install httpfs;
             load httpfs;
-            CREATE OR REPLACE SECRET {access_type}_secret (
+            CREATE OR REPLACE SECRET write_secret (
                 TYPE S3,
                 KEY_ID '{os.getenv(s3_access_key_id_var_name)}',
                 SECRET '{os.getenv(s3_secret_access_key_var_name)}',

@@ -79,10 +79,7 @@ def s3_sync(config_path: str) -> None:
     logging.info('Extracting worldwide box office data.')
     config = S3SyncConfig.from_yaml(config_path)
 
-    duckdb_con = DuckDBConnection(
-        config=config,
-        need_write_access=True,
-    ).connection
+    duckdb_con = DuckDBConnection(config=config).connection
 
     current_year = datetime.date.today().year
     last_year = current_year - 1
