@@ -4,14 +4,15 @@ import duckdb
 from dotenv import load_dotenv
 
 from src import project_root
+from src.utils.config import S3SyncConfig
 
 load_dotenv()
 
 
 class DuckDBConnection:
-    def __init__(self, config, need_write_access=False):
+    def __init__(self, config: S3SyncConfig, need_write_access=False):
         database_name = (
-            project_root / 'src' / 'duckdb_databases' / config.get('database_file')
+            project_root / 'src' / 'duckdb_databases' / 'box_office_tracking_db.duckdb'
         )
 
         self.connection = duckdb.connect(
@@ -21,15 +22,11 @@ class DuckDBConnection:
         self.need_write_access = need_write_access
         self._configure_connection(config)
 
-    def _configure_connection(self, config):
+    def _configure_connection(self, config: S3SyncConfig):
         access_type = 'write' if self.need_write_access else 'read'
-        s3_access_key_id_var_name = config.get(
-            f's3_{access_type}_access_key_id_var_name',
-            'S3_ACCESS_KEY_ID',
-        )
-        s3_secret_access_key_var_name = config.get(
-            f's3_{access_type}_secret_access_key_var_name',
-            'S3_SECRET_ACCESS_KEY',
+        s3_access_key_id_var_name = config.get_s3_access_key_id_var_name(access_type)
+        s3_secret_access_key_var_name = config.get_s3_secret_access_key_var_name(
+            access_type
         )
 
         self.connection.execute(

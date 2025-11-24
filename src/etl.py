@@ -4,8 +4,8 @@ import ssl
 
 from pandas import read_html
 
+from src.utils.config import S3SyncConfig
 from src.utils.db_connection import DuckDBConnection
-from src.utils.read_config import get_config_dict
 from src.utils.s3_utils import load_df_to_s3_table
 
 S3_DATE_FORMAT = '%Y-%m-%d'
@@ -77,7 +77,7 @@ def publish_tables_to_s3(duckdb_con: DuckDBConnection, bucket: str) -> None:
 
 def s3_sync(config_path: str) -> None:
     logging.info('Extracting worldwide box office data.')
-    config = get_config_dict(config_path)
+    config = S3SyncConfig.from_yaml(config_path)
 
     duckdb_con = DuckDBConnection(
         config=config,
@@ -90,7 +90,7 @@ def s3_sync(config_path: str) -> None:
     logging.info(f'Running for {current_year} and {last_year}')
 
     total_rows_loaded = 0
-    bucket = config['bucket']
+    bucket = config.bucket
 
     for year in [current_year, last_year]:
         total_rows_loaded += load_worldwide_box_office_to_s3(
