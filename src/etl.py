@@ -49,7 +49,7 @@ def publish_tables_to_s3(duckdb_wrapper: DuckDBConnection, bucket: str) -> None:
             with all_data as (
                 select
                     *
-                    , split_part(split_part(filename, 'release_year=', 2), '/', 1) as year_part_from_s3
+                    , split_part(split_part(filename, 'release_year=', 2), '/', 1) as release_year
                     , strptime(split_part(split_part(filename, 'scraped_date=', 2), '/', 1), '%Y-%m-%d') as scraped_date_from_s3
                 from read_parquet('s3://{bucket}/release_year=*/scraped_date=*/data.parquet', filename=true)
             )
@@ -59,7 +59,7 @@ def publish_tables_to_s3(duckdb_wrapper: DuckDBConnection, bucket: str) -> None:
                 , coalesce(try_cast(replace(substring("Domestic", 2), ',', '') as integer), 0) as domestic_rev
                 , coalesce(try_cast(replace(substring("Foreign", 2), ',', '') as integer), 0) as foreign_rev
                 , cast(scraped_date_from_s3 as date) as loaded_date
-                , cast(year_part_from_s3 as int) as year_part
+                , cast(release_year as int) as release_year
                 , now() as published_timestamp_utc
             from all_data
         '''
