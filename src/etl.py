@@ -15,7 +15,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 
 def load_worldwide_box_office_to_s3(
-    duckdb_con: DuckDBConnection,
+    duckdb_wrapper: DuckDBConnection,
     year: int,
     bucket: str,
 ) -> int:
@@ -32,7 +32,7 @@ def load_worldwide_box_office_to_s3(
     s3_key = f'release_year={year}/scraped_date={formatted_date}/data'
 
     rows_loaded = load_df_to_s3_table(
-        duckdb_con=duckdb_con,
+        duckdb_con=duckdb_wrapper.connection,
         df=df,
         s3_key=s3_key,
         bucket_name=bucket,
@@ -41,10 +41,10 @@ def load_worldwide_box_office_to_s3(
     return rows_loaded
 
 
-def publish_tables_to_s3(duckdb_con: DuckDBConnection, bucket: str) -> None:
+def publish_tables_to_s3(duckdb_wrapper: DuckDBConnection, bucket: str) -> None:
     logging.info('Publishing tables to S3.')
 
-    df = duckdb_con.query(
+    df = duckdb_wrapper.query(
         f'''
             with all_data as (
                 select
@@ -66,7 +66,7 @@ def publish_tables_to_s3(duckdb_con: DuckDBConnection, bucket: str) -> None:
     ).df()
 
     rows_loaded = load_df_to_s3_table(
-        duckdb_con=duckdb_con,
+        duckdb_con=duckdb_wrapper.connection,
         df=df,
         s3_key='published_tables/daily_ranks/data',
         bucket_name=bucket,
@@ -79,21 +79,20 @@ def s3_sync(config_path: str) -> None:
     logging.info('Extracting worldwide box office data.')
     config = S3SyncConfig.from_yaml(config_path)
 
-    duckdb_con = DuckDBConnection(config=config).connection
+    with DuckDBConnection(config=config) as duckdb_wrapper:
+        current_year = datetime.date.today().year
+        last_year = current_year - 1
 
-    current_year = datetime.date.today().year
-    last_year = current_year - 1
+        logging.info(f'Running for {current_year} and {last_year}')
 
-    logging.info(f'Running for {current_year} and {last_year}')
+        total_rows_loaded = 0
+        bucket = config.bucket
 
-    total_rows_loaded = 0
-    bucket = config.bucket
+        for year in [current_year, last_year]:
+            total_rows_loaded += load_worldwide_box_office_to_s3(
+                duckdb_wrapper=duckdb_wrapper, year=year, bucket=bucket
+            )
 
-    for year in [current_year, last_year]:
-        total_rows_loaded += load_worldwide_box_office_to_s3(
-            duckdb_con=duckdb_con, year=year, bucket=bucket
-        )
+        logging.info(f'Total rows loaded to {bucket}: {total_rows_loaded}')
 
-    logging.info(f'Total rows loaded to {bucket}: {total_rows_loaded}')
-
-    publish_tables_to_s3(duckdb_con=duckdb_con, bucket=bucket)
+        publish_tables_to_s3(duckdb_wrapper=duckdb_wrapper, bucket=bucket)

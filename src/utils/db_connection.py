@@ -50,3 +50,12 @@ class DuckDBConnection:
 
     def df(self, query):
         return self.connection.query(query).df()
+
+    def __enter__(self):
+        """Enter the context manager."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Exit the context manager and close the connection."""
+        self.close()
+        return False
