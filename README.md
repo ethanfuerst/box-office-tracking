@@ -1,6 +1,6 @@
 # box-office-tracking
 
-> Creates a cron job using [modal](https://modal.com/) to scrape worldwide box office data from Box Office Mojo, process it with DuckDB, and publish cleaned tables to S3.
+> Creates a cron job using [Modal](https://modal.com/) to scrape worldwide box office data from Box Office Mojo, process it with DuckDB, and publish cleaned tables to S3.
 
 ## Architecture
 Data flows as scraped from Box Office Mojo → processed with DuckDB → published to S3. Raw data is partitioned by `release_year` and `scraped_date` in Parquet format. Cleaned tables are publised to the `published_tables/` path.
@@ -9,13 +9,6 @@ Data flows as scraped from Box Office Mojo → processed with DuckDB → publish
 - `daily_ranks`: One row per film per scraped date.
 
 See [SCHEMA.md](SCHEMA.md) for full column definitions and version history.
-
-## Installation
-```bash
-git clone <repository-url>
-cd box-office-tracking
-uv sync
-```
 
 ## Configuration
 Create `src/config/s3_sync.yml`:
@@ -30,18 +23,21 @@ Set environment variables:
 - `BOX_OFFICE_TRACKING_S3_SECRET_ACCESS_KEY`: S3 secret access key
 
 ## Usage
-Run locally:
+
+### Local Development
+
 ```bash
-python app.py
+# Run locally
+uv run python3 app.py
 ```
 
-Run via Modal:
-```bash
-modal deploy app.py
-```
+### Deployment
 
-## Scheduling / Production
-The pipeline runs daily at 7:00 AM UTC via Modal's cron scheduler. The function includes automatic retries (max 3 attempts) with exponential backoff. Secrets are managed through Modal's secret management system (`box-office-tracking-secrets`).
+The application runs on Modal with daily scheduled updates at 9 AM UTC. All config files in `src/config/` are automatically discovered and processed.
+
+```bash
+uv run modal deploy app.py
+```
 
 ## Versioning & Published Tables
 Versions will change the published tables, partitioned by major version.
