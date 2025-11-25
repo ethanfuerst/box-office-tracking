@@ -44,4 +44,4 @@ modal deploy app.py
 The pipeline runs daily at 7:00 AM UTC via Modal's cron scheduler. The function includes automatic retries (max 3 attempts) with exponential backoff. Secrets are managed through Modal's secret management system (`box-office-tracking-secrets`).
 
 ## Versioning & Published Tables
-Versions will affect the published tables, partitioned by major version.
+Versions will change the published tables, partitioned by major version.
