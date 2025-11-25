@@ -24,4 +24,4 @@ This document describes the schema for published tables in the box-office-tracki
 
 ### Version History
 
-- **v1.0.0** (current): Initial schema with stable column definitions
+- **v1** (current): Initial schema with stable column definitions
