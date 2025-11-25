@@ -68,7 +68,7 @@ def publish_tables_to_s3(duckdb_wrapper: DuckDBConnection, bucket: str) -> None:
     rows_loaded = load_df_to_s3_table(
         duckdb_con=duckdb_wrapper.connection,
         df=df,
-        s3_key='published_tables/daily_ranks/data',
+        s3_key='published_tables/daily_ranks/v1/data',
         bucket_name=bucket,
     )
 
