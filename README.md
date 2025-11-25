@@ -12,17 +12,10 @@
 ## Architecture
 Data flows from Box Office Mojo HTML tables → DuckDB for processing → S3 storage. Raw data is stored partitioned by `release_year` and `scraped_date` in Parquet format. A daily aggregation process reads all raw data and publishes cleaned tables to `published_tables/daily_ranks/data.parquet` with standardized columns and data types.
 
-## Data Schema
-The published `daily_ranks` table contains:
-- `title`: Film title
-- `revenue`: Worldwide revenue (integer)
-- `domestic_rev`: Domestic revenue (integer)
-- `foreign_rev`: Foreign revenue (integer)
-- `loaded_date`: Date when data was scraped (date)
-- `release_year`: Year of film release (integer)
-- `published_timestamp_utc`: Timestamp when table was published (timestamp)
+## Tables Published
+- `daily_ranks`: One row per film per scraped date.
 
-Grain: One row per film per scraped date.
+See [SCHEMA.md](SCHEMA.md) for full column definitions and version history.
 
 ## Installation
 ```bash
