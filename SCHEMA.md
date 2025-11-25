@@ -1,10 +1,10 @@
 # Schema Documentation
 
-This document describes the schema for published tables in the box-office-tracking project.
+Below are the published tables and their schemas.
 
 ## daily_ranks
 
-**Location**: `s3://{bucket}/published_tables/daily_ranks/data.parquet`
+**Location**: `s3://{bucket}/published_tables/daily_ranks/<version_number>/data.parquet`
 
 **Grain**: One row per film per scraped date
 
