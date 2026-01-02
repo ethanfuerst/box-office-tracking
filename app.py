@@ -1,7 +1,7 @@
 import modal
 
 from src import project_root
-from src.etl import s3_sync
+from src.etl import extract, load, transform
 
 app = modal.App('box-office-tracking')
 
@@ -29,7 +29,9 @@ modal_image = (
     ),
 )
 def run_s3_sync():
-    s3_sync(config_path=project_root / 'src/config/s3_sync.yml')
+    extract(config_path=project_root / 'src/config/s3_sync.yml')
+    transform(config_path=project_root / 'src/config/s3_sync.yml')
+    load(config_path=project_root / 'src/config/s3_sync.yml')
 
 
 if __name__ == '__main__':

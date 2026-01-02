@@ -3,7 +3,9 @@ import logging
 import ssl
 
 from pandas import read_html
+from sqlmesh.core.context import Context
 
+from src import project_root
 from src.utils.config import S3SyncConfig
 from src.utils.db_connection import DuckDBConnection
 from src.utils.s3_utils import load_df_to_s3_table
@@ -75,9 +77,13 @@ def publish_tables_to_s3(duckdb_wrapper: DuckDBConnection, bucket: str) -> None:
     return rows_loaded
 
 
-def s3_sync(config_path: str) -> None:
+def parse_config(config_path: str) -> S3SyncConfig:
+    return S3SyncConfig.from_yaml(config_path)
+
+
+def extract(config_path: str) -> None:
     logging.info('Extracting worldwide box office data.')
-    config = S3SyncConfig.from_yaml(config_path)
+    config = parse_config(config_path)
 
     with DuckDBConnection(config=config) as duckdb_wrapper:
         current_year = datetime.date.today().year
@@ -95,4 +101,19 @@ def s3_sync(config_path: str) -> None:
 
         logging.info(f'Total rows loaded to {bucket}: {total_rows_loaded}')
 
+
+def transform(config_path: str) -> None:
+    logging.info('Running SQLMesh plan and apply.')
+    sqlmesh_context = Context(paths=project_root / 'src' / 'sqlmesh_project')
+
+    plan = sqlmesh_context.plan()
+    sqlmesh_context.apply(plan)
+    _ = sqlmesh_context.run()
+
+
+def load(config_path: str) -> None:
+    config = parse_config(config_path)
+    bucket = config.bucket
+
+    with DuckDBConnection(config=config) as duckdb_wrapper:
         publish_tables_to_s3(duckdb_wrapper=duckdb_wrapper, bucket=bucket)
