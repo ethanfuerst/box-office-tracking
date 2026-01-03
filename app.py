@@ -3,8 +3,6 @@ from dotenv import load_dotenv
 
 from src.etl import extract, load, transform
 
-load_dotenv()
-
 app = modal.App('box-office-tracking')
 
 modal_image = (
@@ -36,4 +34,6 @@ def run_s3_sync():
 
 
 if __name__ == '__main__':
+    load_dotenv()
+
     run_s3_sync.local()
