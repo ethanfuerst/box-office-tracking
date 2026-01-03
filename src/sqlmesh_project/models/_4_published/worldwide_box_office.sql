@@ -10,5 +10,5 @@ select
     , foreign_rev
     , loaded_date
     , release_year
-    , now() as published_timestamp_utc
+    , timezone('UTC', now())::timestamp as published_timestamp_utc
 from cleaned.worldwide_box_office
