@@ -15,7 +15,6 @@ modal_image = (
         remote_path='/root/src/duckdb_databases/.gitkeep',
         copy=True,
     )
-    .add_local_dir('src/config/', remote_path='/root/src/config')
     .add_local_python_source('src')
 )
 

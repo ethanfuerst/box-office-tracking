@@ -33,7 +33,7 @@ def load_worldwide_box_office_to_s3(year: int) -> int:
     return rows_loaded
 
 
-def extract() -> None:
+def extract_worldwide_box_office() -> None:
     logging.info('Extracting worldwide box office data.')
 
     current_year = datetime.date.today().year
@@ -48,6 +48,10 @@ def extract() -> None:
         total_rows_loaded += load_worldwide_box_office_to_s3(year=year)
 
     logging.info(f'Total rows loaded to {bucket}: {total_rows_loaded}')
+
+
+def extract() -> None:
+    extract_worldwide_box_office()
 
 
 def transform() -> None:
