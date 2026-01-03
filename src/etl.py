@@ -2,6 +2,7 @@ import datetime
 import logging
 import ssl
 
+import duckdb
 from pandas import read_html
 from sqlmesh.core.context import Context
 
@@ -43,32 +44,28 @@ def load_worldwide_box_office_to_s3(
     return rows_loaded
 
 
-def publish_tables_to_s3(duckdb_wrapper: DuckDBConnection, bucket: str) -> None:
+def publish_tables_to_s3_from_connection(
+    duckdb_con: duckdb.DuckDBPyConnection, bucket: str
+) -> int:
+    """Publish tables to S3 using a DuckDB connection directly."""
     logging.info('Publishing tables to S3.')
 
-    df = duckdb_wrapper.query(
-        f'''
-            with all_data as (
-                select
-                    *
-                    , split_part(split_part(filename, 'release_year=', 2), '/', 1) as release_year
-                    , strptime(split_part(split_part(filename, 'scraped_date=', 2), '/', 1), '%Y-%m-%d') as scraped_date_from_s3
-                from read_parquet('s3://{bucket}/release_year=*/scraped_date=*/data.parquet', filename=true)
-            )
-            select
-                "Release Group" as title
-                , coalesce(try_cast(replace(substring("Worldwide", 2), ',', '') as integer), 0) as revenue
-                , coalesce(try_cast(replace(substring("Domestic", 2), ',', '') as integer), 0) as domestic_rev
-                , coalesce(try_cast(replace(substring("Foreign", 2), ',', '') as integer), 0) as foreign_rev
-                , cast(scraped_date_from_s3 as date) as loaded_date
-                , cast(release_year as int) as release_year
-                , now() as published_timestamp_utc
-            from all_data
+    df = duckdb_con.execute(
+        '''
+        SELECT
+            title,
+            revenue,
+            domestic_rev,
+            foreign_rev,
+            loaded_date,
+            release_year,
+            published_timestamp_utc
+        FROM "box_office_tracking_sqlmesh_db"."published"."worldwide_box_office"
         '''
     ).df()
 
     rows_loaded = load_df_to_s3_table(
-        duckdb_con=duckdb_wrapper.connection,
+        duckdb_con=duckdb_con,
         df=df,
         s3_key='published_tables/daily_ranks/v1/data',
         bucket_name=bucket,
@@ -115,5 +112,10 @@ def load(config_path: str) -> None:
     config = parse_config(config_path)
     bucket = config.bucket
 
-    with DuckDBConnection(config=config) as duckdb_wrapper:
-        publish_tables_to_s3(duckdb_wrapper=duckdb_wrapper, bucket=bucket)
+    logging.info('Connecting to SQLMesh database for publishing.')
+    sqlmesh_context = Context(paths=project_root / 'src' / 'sqlmesh_project')
+
+    engine_adapter = sqlmesh_context.engine_adapter
+    duckdb_con = engine_adapter.connection
+
+    publish_tables_to_s3_from_connection(duckdb_con=duckdb_con, bucket=bucket)
