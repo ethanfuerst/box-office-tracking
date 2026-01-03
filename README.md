@@ -34,17 +34,18 @@ uv sync
 ```
 
 ## Configuration
-Create src/config/s3_sync.yml:
 
-```yaml
-bucket: your-s3-bucket-name
-s3_access_key_id_var_name: BOX_OFFICE_TRACKING_S3_ACCESS_KEY_ID
-s3_secret_access_key_var_name: BOX_OFFICE_TRACKING_S3_SECRET_ACCESS_KEY
+Create a `.env` file in the project root with the following environment variables:
+
+```bash
+S3_BUCKET="Your S3 bucket name"
+S3_ACCESS_KEY_ID="Your S3 access key ID"
+S3_SECRET_ACCESS_KEY="Your S3 secret access key"
+S3_ENDPOINT="Your S3 endpoint"
+S3_REGION="Your S3 region"
 ```
 
-Set environment variables:
-`BOX_OFFICE_TRACKING_S3_ACCESS_KEY_ID` - S3 access key ID
-`BOX_OFFICE_TRACKING_S3_SECRET_ACCESS_KEY` - S3 secret access key
+The `.env` file is automatically loaded when running the application locally. For Modal deployment, configure these as secrets in Modal.
 
 ## Usage
 
@@ -64,7 +65,7 @@ Deploy the scheduled job to Modal:
 uv run modal deploy app.py
 ```
 
-By default, the job is scheduled to run daily at 09:00 UTC. All config files in src/config/ are automatically discovered and processed.
+By default, the job is scheduled to run daily at 07:00 UTC (configured via `modal.Cron('0 7 * * *')`).
 
 ## Versioning and Published Tables
 
