@@ -1,7 +1,7 @@
 import modal
+from dotenv import load_dotenv
 
-from src import project_root
-from src.etl import s3_sync
+from src.etl import extract, load, transform
 
 app = modal.App('box-office-tracking')
 
@@ -13,7 +13,6 @@ modal_image = (
         remote_path='/root/src/duckdb_databases/.gitkeep',
         copy=True,
     )
-    .add_local_dir('src/config/', remote_path='/root/src/config')
     .add_local_python_source('src')
 )
 
@@ -29,8 +28,11 @@ modal_image = (
     ),
 )
 def run_s3_sync():
-    s3_sync(config_path=project_root / 'src/config/s3_sync.yml')
+    extract()
+    transform()
+    load()
 
 
 if __name__ == '__main__':
+    load_dotenv()
     run_s3_sync.local()

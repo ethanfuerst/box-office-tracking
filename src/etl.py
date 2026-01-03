@@ -1,12 +1,13 @@
 import datetime
 import logging
+import os
 import ssl
 
 from pandas import read_html
+from sqlmesh.core.context import Context
 
-from src.utils.config import S3SyncConfig
-from src.utils.db_connection import DuckDBConnection
-from src.utils.s3_utils import load_df_to_s3_table
+from src import project_root
+from src.utils.s3_utils import load_df_to_s3_parquet, load_duckdb_table_to_s3_parquet
 
 S3_DATE_FORMAT = '%Y-%m-%d'
 
@@ -14,11 +15,7 @@ S3_DATE_FORMAT = '%Y-%m-%d'
 ssl._create_default_https_context = ssl._create_unverified_context
 
 
-def load_worldwide_box_office_to_s3(
-    duckdb_wrapper: DuckDBConnection,
-    year: int,
-    bucket: str,
-) -> int:
+def load_worldwide_box_office_to_s3(year: int) -> int:
     logging.info(f'Starting extraction for {year}.')
 
     try:
@@ -31,68 +28,51 @@ def load_worldwide_box_office_to_s3(
 
     s3_key = f'release_year={year}/scraped_date={formatted_date}/data'
 
-    rows_loaded = load_df_to_s3_table(
-        duckdb_con=duckdb_wrapper.connection,
-        df=df,
-        s3_key=s3_key,
-        bucket_name=bucket,
-    )
+    rows_loaded = load_df_to_s3_parquet(df=df, s3_key=s3_key)
 
     return rows_loaded
 
 
-def publish_tables_to_s3(duckdb_wrapper: DuckDBConnection, bucket: str) -> None:
-    logging.info('Publishing tables to S3.')
-
-    df = duckdb_wrapper.query(
-        f'''
-            with all_data as (
-                select
-                    *
-                    , split_part(split_part(filename, 'release_year=', 2), '/', 1) as release_year
-                    , strptime(split_part(split_part(filename, 'scraped_date=', 2), '/', 1), '%Y-%m-%d') as scraped_date_from_s3
-                from read_parquet('s3://{bucket}/release_year=*/scraped_date=*/data.parquet', filename=true)
-            )
-            select
-                "Release Group" as title
-                , coalesce(try_cast(replace(substring("Worldwide", 2), ',', '') as integer), 0) as revenue
-                , coalesce(try_cast(replace(substring("Domestic", 2), ',', '') as integer), 0) as domestic_rev
-                , coalesce(try_cast(replace(substring("Foreign", 2), ',', '') as integer), 0) as foreign_rev
-                , cast(scraped_date_from_s3 as date) as loaded_date
-                , cast(release_year as int) as release_year
-                , now() as published_timestamp_utc
-            from all_data
-        '''
-    ).df()
-
-    rows_loaded = load_df_to_s3_table(
-        duckdb_con=duckdb_wrapper.connection,
-        df=df,
-        s3_key='published_tables/daily_ranks/v1/data',
-        bucket_name=bucket,
-    )
-
-    return rows_loaded
-
-
-def s3_sync(config_path: str) -> None:
+def extract_worldwide_box_office() -> None:
     logging.info('Extracting worldwide box office data.')
-    config = S3SyncConfig.from_yaml(config_path)
 
-    with DuckDBConnection(config=config) as duckdb_wrapper:
-        current_year = datetime.date.today().year
-        last_year = current_year - 1
+    current_year = datetime.date.today().year
+    last_year = current_year - 1
 
-        logging.info(f'Running for {current_year} and {last_year}')
+    logging.info(f'Running for {current_year} and {last_year}')
 
-        total_rows_loaded = 0
-        bucket = config.bucket
+    total_rows_loaded = 0
+    bucket = os.getenv('S3_BUCKET')
 
-        for year in [current_year, last_year]:
-            total_rows_loaded += load_worldwide_box_office_to_s3(
-                duckdb_wrapper=duckdb_wrapper, year=year, bucket=bucket
-            )
+    for year in [current_year, last_year]:
+        total_rows_loaded += load_worldwide_box_office_to_s3(year=year)
 
-        logging.info(f'Total rows loaded to {bucket}: {total_rows_loaded}')
+    logging.info(f'Total rows loaded to {bucket}: {total_rows_loaded}')
 
-        publish_tables_to_s3(duckdb_wrapper=duckdb_wrapper, bucket=bucket)
+
+def extract() -> None:
+    extract_worldwide_box_office()
+
+
+def transform() -> None:
+    logging.info('Running SQLMesh plan and apply.')
+    sqlmesh_context = Context(paths=project_root / 'src' / 'sqlmesh_project')
+
+    plan = sqlmesh_context.plan()
+    sqlmesh_context.apply(plan)
+    _ = sqlmesh_context.run()
+
+
+def load() -> None:
+    logging.info('Connecting to SQLMesh database for publishing.')
+    sqlmesh_context = Context(paths=project_root / 'src' / 'sqlmesh_project')
+
+    engine_adapter = sqlmesh_context.engine_adapter
+    duckdb_con = engine_adapter.connection
+
+    load_duckdb_table_to_s3_parquet(
+        duckdb_con=duckdb_con,
+        table_name='worldwide_box_office',
+        s3_key='published_tables/daily_ranks/v1/data',
+        schema_name='published',
+    )
