@@ -13,26 +13,28 @@ setup_logging()
 def load_df_to_s3_parquet(
     df: DataFrame,
     s3_key: str,
-    bucket_name: str,
+    bucket_name: str | None = None,
 ) -> int:
-    """
+    '''
     Load DataFrame directly to S3 as Parquet using pandas + s3fs.
 
     Args:
         df: DataFrame to upload
         s3_key: S3 key path (without .parquet extension)
-        bucket_name: S3 bucket name
+        bucket_name: S3 bucket name (defaults to S3_BUCKET environment variable)
 
     Returns:
         Number of rows loaded
-    """
+    '''
+    if not bucket_name:
+        bucket_name = os.getenv('S3_BUCKET')
+
     logging.info(f'Loading DataFrame to s3://{bucket_name}/{s3_key}.parquet')
 
-    # Get credentials from env vars if not provided
-    access_key_id = os.getenv('BOX_OFFICE_TRACKING_S3_ACCESS_KEY_ID')
-    secret_access_key = os.getenv('BOX_OFFICE_TRACKING_S3_SECRET_ACCESS_KEY')
-    endpoint = 'nyc3.digitaloceanspaces.com'
-    region = 'nyc3'
+    access_key_id = os.getenv('S3_ACCESS_KEY_ID')
+    secret_access_key = os.getenv('S3_SECRET_ACCESS_KEY')
+    endpoint = os.getenv('S3_ENDPOINT')
+    region = os.getenv('S3_REGION')
 
     fs = s3fs.S3FileSystem(
         key=access_key_id,
@@ -58,30 +60,25 @@ def load_duckdb_table_to_s3_parquet(
     duckdb_con: duckdb.DuckDBPyConnection,
     table_name: str,
     s3_key: str,
-    bucket_name: str,
-    schema_name: str = None,
-    access_key_id: str = None,
-    secret_access_key: str = None,
-    endpoint: str = None,
-    region: str = None,
+    schema_name: str,
+    bucket_name: str | None = None,
 ) -> int:
-    """
+    '''
     Load DuckDB table to S3 as Parquet by querying to DataFrame first.
 
     Args:
         duckdb_con: DuckDB connection
         table_name: Name of the table in DuckDB
         s3_key: S3 key path (without .parquet extension)
-        bucket_name: S3 bucket name
-        schema_name: Optional schema name (e.g., 'box_office_tracking_sqlmesh_db.published')
-        access_key_id: S3 access key ID (defaults to env var)
-        secret_access_key: S3 secret access key (defaults to env var)
-        endpoint: S3 endpoint URL (defaults to nyc3.digitaloceanspaces.com)
-        region: S3 region (defaults to nyc3)
+        schema_name: Schema name (e.g., 'published')
+        bucket_name: S3 bucket name (defaults to S3_BUCKET environment variable)
 
     Returns:
         Number of rows loaded
-    """
+    '''
+    if not bucket_name:
+        bucket_name = os.getenv('S3_BUCKET')
+
     logging.info(
         f'Loading DuckDB table {table_name} to s3://{bucket_name}/{s3_key}.parquet'
     )
@@ -91,10 +88,6 @@ def load_duckdb_table_to_s3_parquet(
     else:
         qualified_table = f'"{table_name}"'
 
-    df = duckdb_con.execute(f'SELECT * FROM {qualified_table}').df()
+    df = duckdb_con.execute(f'select * from {qualified_table}').df()
 
-    return load_df_to_s3_parquet(
-        df=df,
-        s3_key=s3_key,
-        bucket_name=bucket_name,
-    )
+    return load_df_to_s3_parquet(df=df, s3_key=s3_key, bucket_name=bucket_name)

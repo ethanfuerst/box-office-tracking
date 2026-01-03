@@ -32,9 +32,9 @@ modal_image = (
     ),
 )
 def run_s3_sync():
-    extract(config_path=project_root / 'src/config/s3_sync.yml')
+    extract()
     transform()
-    load(config_path=project_root / 'src/config/s3_sync.yml')
+    load()
 
 
 if __name__ == '__main__':

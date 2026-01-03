@@ -1,12 +1,12 @@
 import datetime
 import logging
+import os
 import ssl
 
 from pandas import read_html
 from sqlmesh.core.context import Context
 
 from src import project_root
-from src.utils.config import S3SyncConfig
 from src.utils.s3_utils import load_df_to_s3_parquet, load_duckdb_table_to_s3_parquet
 
 S3_DATE_FORMAT = '%Y-%m-%d'
@@ -15,10 +15,7 @@ S3_DATE_FORMAT = '%Y-%m-%d'
 ssl._create_default_https_context = ssl._create_unverified_context
 
 
-def load_worldwide_box_office_to_s3(
-    year: int,
-    bucket: str,
-) -> int:
+def load_worldwide_box_office_to_s3(year: int) -> int:
     logging.info(f'Starting extraction for {year}.')
 
     try:
@@ -31,22 +28,13 @@ def load_worldwide_box_office_to_s3(
 
     s3_key = f'release_year={year}/scraped_date={formatted_date}/data'
 
-    rows_loaded = load_df_to_s3_parquet(
-        df=df,
-        s3_key=s3_key,
-        bucket_name=bucket,
-    )
+    rows_loaded = load_df_to_s3_parquet(df=df, s3_key=s3_key)
 
     return rows_loaded
 
 
-def parse_config(config_path: str) -> S3SyncConfig:
-    return S3SyncConfig.from_yaml(config_path)
-
-
-def extract(config_path: str) -> None:
+def extract() -> None:
     logging.info('Extracting worldwide box office data.')
-    config = parse_config(config_path)
 
     current_year = datetime.date.today().year
     last_year = current_year - 1
@@ -54,13 +42,10 @@ def extract(config_path: str) -> None:
     logging.info(f'Running for {current_year} and {last_year}')
 
     total_rows_loaded = 0
-    bucket = config.bucket
+    bucket = os.getenv('S3_BUCKET')
 
     for year in [current_year, last_year]:
-        total_rows_loaded += load_worldwide_box_office_to_s3(
-            year=year,
-            bucket=bucket,
-        )
+        total_rows_loaded += load_worldwide_box_office_to_s3(year=year)
 
     logging.info(f'Total rows loaded to {bucket}: {total_rows_loaded}')
 
@@ -74,10 +59,7 @@ def transform() -> None:
     _ = sqlmesh_context.run()
 
 
-def load(config_path: str) -> None:
-    config = parse_config(config_path)
-    bucket = config.bucket
-
+def load() -> None:
     logging.info('Connecting to SQLMesh database for publishing.')
     sqlmesh_context = Context(paths=project_root / 'src' / 'sqlmesh_project')
 
@@ -88,6 +70,5 @@ def load(config_path: str) -> None:
         duckdb_con=duckdb_con,
         table_name='worldwide_box_office',
         s3_key='published_tables/daily_ranks/v1/data',
-        bucket_name=bucket,
         schema_name='published',
     )
