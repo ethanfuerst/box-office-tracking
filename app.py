@@ -35,5 +35,4 @@ def run_s3_sync():
 
 if __name__ == '__main__':
     load_dotenv()
-
     run_s3_sync.local()
