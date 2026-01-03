@@ -1,7 +1,6 @@
 import modal
 from dotenv import load_dotenv
 
-from src import project_root
 from src.etl import extract, load, transform
 
 load_dotenv()
