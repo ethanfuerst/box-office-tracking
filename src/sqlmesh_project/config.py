@@ -31,7 +31,7 @@ config = Config(
                         'region': os.getenv('S3_REGION'),
                         'endpoint': os.getenv('S3_ENDPOINT'),
                         'key_id': os.getenv('S3_ACCESS_KEY_ID'),
-                        'secret': os.getenv('SECRET_ACCESS_KEY'),
+                        'secret': os.getenv('S3_SECRET_ACCESS_KEY'),
                     }
                 },
             )

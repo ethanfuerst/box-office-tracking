@@ -60,7 +60,6 @@ def transform() -> None:
 
     plan = sqlmesh_context.plan()
     sqlmesh_context.apply(plan)
-    _ = sqlmesh_context.run()
 
 
 def load() -> None:
