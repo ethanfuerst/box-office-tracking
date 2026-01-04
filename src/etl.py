@@ -6,9 +6,11 @@ import ssl
 from pandas import read_html
 from sqlmesh.core.context import Context
 
-from src import project_root
+from src import database_path, project_root
+from src.utils.logging_config import setup_logging
 from src.utils.s3_utils import load_df_to_s3_parquet, load_duckdb_table_to_s3_parquet
 
+setup_logging()
 S3_DATE_FORMAT = '%Y-%m-%d'
 
 
@@ -58,19 +60,16 @@ def transform() -> None:
     logging.info('Running SQLMesh plan and apply.')
     sqlmesh_context = Context(paths=project_root / 'src' / 'sqlmesh_project')
 
-    plan = sqlmesh_context.plan()
-    sqlmesh_context.apply(plan)
+    sqlmesh_context.plan(include_unmodified=True, auto_apply=True)
 
 
 def load() -> None:
-    logging.info('Connecting to SQLMesh database for publishing.')
-    sqlmesh_context = Context(paths=project_root / 'src' / 'sqlmesh_project')
-
-    engine_adapter = sqlmesh_context.engine_adapter
-    duckdb_con = engine_adapter.connection
+    logging.info(
+        'Reading published.worldwide_box_office from DuckDB database for publishing.'
+    )
 
     load_duckdb_table_to_s3_parquet(
-        duckdb_con=duckdb_con,
+        database_path=database_path,
         table_name='worldwide_box_office',
         s3_key='published_tables/daily_ranks/v1/data',
         schema_name='published',
