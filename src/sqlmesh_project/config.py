@@ -9,19 +9,14 @@ from sqlmesh.core.config import (
     ModelDefaultsConfig,
 )
 
-from src import project_root
+from src import database_path
 
 config = Config(
     model_defaults=ModelDefaultsConfig(dialect='duckdb'),
     gateways={
         'duckdb': GatewayConfig(
             connection=DuckDBConnectionConfig(
-                database=str(
-                    project_root
-                    / 'src'
-                    / 'duckdb_databases'
-                    / 'box_office_tracking_sqlmesh_db.duckdb'
-                ),
+                database=str(database_path),
                 extensions=[
                     {'name': 'httpfs'},
                 ],

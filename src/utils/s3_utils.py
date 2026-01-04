@@ -1,13 +1,12 @@
 import logging
 import os
+from pathlib import Path
 
 import duckdb
 import s3fs
 from pandas import DataFrame
 
-from src.utils.logging_config import setup_logging
-
-setup_logging()
+from src import database_name
 
 
 def load_df_to_s3_parquet(
@@ -57,7 +56,7 @@ def load_df_to_s3_parquet(
 
 
 def load_duckdb_table_to_s3_parquet(
-    duckdb_con: duckdb.DuckDBPyConnection,
+    database_path: Path | str,
     table_name: str,
     s3_key: str,
     schema_name: str,
@@ -67,7 +66,7 @@ def load_duckdb_table_to_s3_parquet(
     Load DuckDB table to S3 as Parquet by querying to DataFrame first.
 
     Args:
-        duckdb_con: DuckDB connection
+        database_path: Path to the DuckDB database file
         table_name: Name of the table in DuckDB
         s3_key: S3 key path (without .parquet extension)
         schema_name: Schema name (e.g., 'published')
@@ -80,14 +79,12 @@ def load_duckdb_table_to_s3_parquet(
         bucket_name = os.getenv('S3_BUCKET')
 
     logging.info(
-        f'Loading DuckDB table {table_name} to s3://{bucket_name}/{s3_key}.parquet'
+        f'Loading DuckDB table {schema_name}.{table_name} to s3://{bucket_name}/{s3_key}.parquet'
     )
 
-    if schema_name:
-        qualified_table = f'"{schema_name}"."{table_name}"'
-    else:
-        qualified_table = f'"{table_name}"'
+    database_path_str = str(database_path)
 
-    df = duckdb_con.execute(f'select * from {qualified_table}').df()
+    with duckdb.connect(database=database_path_str) as con:
+        df = con.query(f'select * from {database_name}.{schema_name}.{table_name}').df()
 
     return load_df_to_s3_parquet(df=df, s3_key=s3_key, bucket_name=bucket_name)
