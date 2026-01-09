@@ -165,3 +165,6 @@ src/config/*.yml
 # DuckDB
 *.duckdb
 *.duckdb.wal
+
+# Claude
+.claude
