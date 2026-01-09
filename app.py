@@ -62,7 +62,7 @@ if __name__ == '__main__':
     if force_all_extracts and skip_extracts:
         parser.error('--force-all-extracts and --skip-extracts are mutually exclusive')
 
-    run_etl_pipeline.local(
+    run_pipeline.local(
         force_all_extracts=force_all_extracts,
         skip_extracts=skip_extracts,
     )
