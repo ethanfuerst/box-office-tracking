@@ -167,4 +167,5 @@ src/config/*.yml
 *.duckdb.wal
 
 # Claude
-.claude
+.claude/*
+!.claude/CLAUDE.md
