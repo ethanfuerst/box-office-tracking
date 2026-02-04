@@ -13,6 +13,7 @@ from src.utils.s3_utils import load_df_to_s3_parquet
 ssl._create_default_https_context = ssl._create_unverified_context
 
 S3_DATE_FORMAT = '%Y-%m-%d'
+EXPECTED_COLUMNS = {'movie_title', 'release_group_url', 'domestic_release_url'}
 
 BOX_OFFICE_MOJO_BASE = 'https://www.boxofficemojo.com'
 BOX_OFFICE_MOJO_UA = (
@@ -122,6 +123,13 @@ def load(df: pd.DataFrame, year: int) -> int:
     if df.empty:
         logging.warning(f'No release ID lookup data found for {year}.')
         return 0
+    missing = EXPECTED_COLUMNS - set(df.columns)
+    if missing:
+        logging.warning(
+            f'Release ID lookup data for {year} is missing columns: {missing}. '
+            f'Got columns: {list(df.columns)}'
+        )
+        return 0
     formatted_date = datetime.date.today().strftime(S3_DATE_FORMAT)
     s3_key = (
         f'raw/release_id_lookup/release_year={year}/scraped_date={formatted_date}/data'
@@ -133,13 +141,22 @@ def main() -> None:
     logging.info('Extracting release ID lookup data.')
     current_year = datetime.date.today().year
     total_rows = 0
+    failed_years = []
     for year in [current_year, current_year - 1]:
         try:
             df = extract(year)
-            total_rows += load(df, year)
+            rows = load(df, year)
+            if rows == 0:
+                failed_years.append(year)
+            total_rows += rows
         except Exception as e:
             logging.error(f'Failed for {year}: {e}')
+            failed_years.append(year)
     logging.info(f'Total rows loaded: {total_rows}')
+    if failed_years:
+        raise RuntimeError(
+            f'release_id_lookup extract failed for years: {failed_years}'
+        )
 
 
 if __name__ == '__main__':

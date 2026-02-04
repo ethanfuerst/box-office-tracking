@@ -5,4 +5,4 @@ MODEL (
 
 select
     *
-from read_parquet('s3://' || @bucket || '/raw/release_id_lookup/release_year=*/scraped_date=*/data.parquet', filename=true)
+from read_parquet('s3://' || @bucket || '/raw/release_id_lookup/release_year=*/scraped_date=*/data.parquet', filename=true, union_by_name=true)
