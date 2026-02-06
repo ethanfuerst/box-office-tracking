@@ -27,6 +27,7 @@ modal_image = (
     image=modal_image,
     schedule=modal.Cron('0 7 * * *'),
     secrets=[modal.Secret.from_name('box-office-tracking-secrets')],
+    timeout=60 * 20,
     retries=modal.Retries(
         max_retries=3,
         backoff_coefficient=1.0,

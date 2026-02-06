@@ -9,6 +9,55 @@ from pandas import DataFrame
 from src import database_name
 
 
+def get_df_from_s3_parquet(
+    s3_path: str,
+    bucket_name: str | None = None,
+) -> DataFrame:
+    '''
+    Read DataFrame from S3 Parquet files using DuckDB.
+
+    Args:
+        s3_path: S3 path pattern (e.g., 'raw/table_name/partition=value/**/*.parquet')
+        bucket_name: S3 bucket name (defaults to S3_BUCKET environment variable)
+
+    Returns:
+        DataFrame with the data from S3
+    '''
+    if not bucket_name:
+        bucket_name = os.getenv('S3_BUCKET')
+
+    logging.info(f'Reading DataFrame from s3://{bucket_name}/{s3_path}')
+
+    endpoint = os.getenv('S3_ENDPOINT')
+    endpoint_url = (
+        f'{endpoint}'
+        if not endpoint.startswith('http')
+        else endpoint.replace('https://', '').replace('http://', '')
+    )
+
+    con = duckdb.connect()
+    con.execute('INSTALL httpfs; LOAD httpfs;')
+    con.execute(
+        f"""
+        CREATE SECRET s3_secret (
+            TYPE S3,
+            KEY_ID '{os.getenv('S3_ACCESS_KEY_ID')}',
+            SECRET '{os.getenv('S3_SECRET_ACCESS_KEY')}',
+            REGION '{os.getenv('S3_REGION')}',
+            ENDPOINT '{endpoint_url}',
+            URL_STYLE 'path',
+            USE_SSL true
+        );
+        """
+    )
+
+    query = f"SELECT * FROM read_parquet('s3://{bucket_name}/{s3_path}')"
+    df = con.execute(query).df()
+
+    logging.info(f'Read {len(df)} rows from s3://{bucket_name}/{s3_path}')
+    return df
+
+
 def load_df_to_s3_parquet(
     df: DataFrame,
     s3_key: str,

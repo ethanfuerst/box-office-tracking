@@ -1,7 +1,11 @@
 import datetime
 import logging
 
-from src.etl.extract.tables import release_id_lookup, worldwide_box_office
+from src.etl.extract.tables import (
+    release_id_lookup,
+    worldwide_box_office,
+    worldwide_snapshot,
+)
 from src.utils.logging_config import setup_logging
 
 setup_logging()
@@ -24,6 +28,12 @@ def main(force_all: bool = False) -> None:
         except Exception as e:
             logging.error(f'release_id_lookup failed: {e}')
             errors.append(('release_id_lookup', e))
+
+        try:
+            worldwide_snapshot.main()
+        except Exception as e:
+            logging.error(f'worldwide_snapshot failed: {e}')
+            errors.append(('worldwide_snapshot', e))
 
     logging.info('Extraction pipeline complete.')
 
