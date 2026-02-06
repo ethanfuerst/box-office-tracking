@@ -3,6 +3,7 @@ import logging
 
 from src.etl.extract.tables import (
     release_id_lookup,
+    release_metadata,
     worldwide_box_office,
     worldwide_snapshot,
 )
@@ -28,6 +29,12 @@ def main(force_all: bool = False) -> None:
         except Exception as e:
             logging.error(f'release_id_lookup failed: {e}')
             errors.append(('release_id_lookup', e))
+
+        try:
+            release_metadata.main()
+        except Exception as e:
+            logging.error(f'release_metadata failed: {e}')
+            errors.append(('release_metadata', e))
 
         try:
             worldwide_snapshot.main()
