@@ -2,6 +2,7 @@ import datetime
 import logging
 
 from src.etl.extract.tables import (
+    release_domestic,
     release_id_lookup,
     release_metadata,
     worldwide_box_office,
@@ -35,6 +36,12 @@ def main(force_all: bool = False) -> None:
         except Exception as e:
             logging.error(f'release_metadata failed: {e}')
             errors.append(('release_metadata', e))
+
+        try:
+            release_domestic.main()
+        except Exception as e:
+            logging.error(f'release_domestic failed: {e}')
+            errors.append(('release_domestic', e))
 
         try:
             worldwide_snapshot.main()
