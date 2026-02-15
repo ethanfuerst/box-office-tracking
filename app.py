@@ -34,11 +34,14 @@ modal_image = (
         initial_delay=60.0,
     ),
 )
-def run_pipeline(force_all_extracts: bool = False, skip_extracts: bool = False):
-    if not skip_extracts:
-        extract(force_all=force_all_extracts)
+def run_pipeline(extract_names: list[str] | None = None):
+    extract_errors = extract(extract_names=extract_names)
     transform()
     load()
+
+    if extract_errors:
+        failed = ', '.join(name for name, _ in extract_errors)
+        raise RuntimeError(f'Extraction failed for: {failed}')
 
 
 if __name__ == '__main__':
@@ -46,24 +49,13 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '--force-all-extracts',
-        action='store_true',
-        help='Force all extract functions to run regardless of day',
-    )
-    parser.add_argument(
-        '--skip-extracts',
-        action='store_true',
-        help='Skip the extract step entirely',
+        '--extracts',
+        nargs='+',
+        help=(
+            'Extract(s) to run by name (e.g. --extracts release_domestic worldwide_box_office). '
+            'Use --extracts all to force all extracts regardless of schedule.'
+        ),
     )
     args = parser.parse_args()
 
-    force_all_extracts = args.force_all_extracts
-    skip_extracts = args.skip_extracts
-
-    if force_all_extracts and skip_extracts:
-        parser.error('--force-all-extracts and --skip-extracts are mutually exclusive')
-
-    run_pipeline.local(
-        force_all_extracts=force_all_extracts,
-        skip_extracts=skip_extracts,
-    )
+    run_pipeline.local(extract_names=args.extracts)

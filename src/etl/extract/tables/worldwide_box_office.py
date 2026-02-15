@@ -4,6 +4,7 @@ import logging
 import pandas as pd
 from pandas import read_html
 
+from src.etl.extract.runner import run_extract
 from src.utils.s3_utils import load_df_to_s3_parquet
 
 S3_DATE_FORMAT = '%Y-%m-%d'
@@ -46,26 +47,21 @@ def load(df: pd.DataFrame, year: int) -> int:
     return load_df_to_s3_parquet(df=df, s3_key=s3_key)
 
 
+def process_year(year: int) -> tuple[int, list[str]]:
+    """Extract and load worldwide box office data for a given year."""
+    try:
+        df = extract(start_year=year, end_year=year)
+        rows = load(df, year)
+        if rows == 0:
+            return 0, [str(year)]
+        return rows, []
+    except Exception as e:
+        logging.error(f'Failed for {year}: {e}')
+        return 0, [str(year)]
+
+
 def main() -> None:
-    logging.info('Extracting worldwide box office data.')
-    current_year = datetime.date.today().year
-    total_rows = 0
-    failed_years = []
-    for year in [current_year, current_year - 1]:
-        try:
-            df = extract(start_year=year, end_year=year)
-            rows = load(df, year)
-            if rows == 0:
-                failed_years.append(year)
-            total_rows += rows
-        except Exception as e:
-            logging.error(f'Failed for {year}: {e}')
-            failed_years.append(year)
-    logging.info(f'Total rows loaded: {total_rows}')
-    if failed_years:
-        raise RuntimeError(
-            f'worldwide_box_office extract failed for years: {failed_years}'
-        )
+    run_extract('worldwide_box_office', process_year)
 
 
 if __name__ == '__main__':

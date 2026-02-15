@@ -5,11 +5,16 @@ import ssl
 import time
 
 import pandas as pd
-import requests
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
-from src.utils.s3_utils import get_df_from_s3_parquet, load_df_to_s3_parquet
+from src.etl.extract.runner import run_extract
+from src.utils.s3_utils import (
+    find_latest_partition,
+    get_df_from_s3_parquet,
+    load_df_to_s3_parquet,
+)
+from src.utils.scraping import DEFAULT_REQUEST_DELAY, create_scrape_session, get_soup
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -24,24 +29,7 @@ EXPECTED_COLUMNS = {
     'release_group_url',
 }
 
-BOX_OFFICE_MOJO_UA = (
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
-    'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-)
-
-_scrape_session = requests.Session()
-_scrape_session.headers.update(
-    {
-        'User-Agent': BOX_OFFICE_MOJO_UA,
-        'Accept-Language': 'en-US,en;q=0.9',
-    }
-)
-
-
-def _get_soup(url: str) -> BeautifulSoup:
-    r = _scrape_session.get(url, timeout=30)
-    r.raise_for_status()
-    return BeautifulSoup(r.text, 'lxml')
+_scrape_session = create_scrape_session()
 
 
 def _clean_currency(val: str) -> str | None:
@@ -107,7 +95,7 @@ def _scrape_releasegroup(release_group_id: str) -> pd.DataFrame:
         f'https://www.boxofficemojo.com/releasegroup/{release_group_id}/'
     )
     try:
-        soup = _get_soup(release_group_url)
+        soup = get_soup(_scrape_session, release_group_url)
         all_records = []
 
         movie_title = None
@@ -140,8 +128,11 @@ def _scrape_releasegroup(release_group_id: str) -> pd.DataFrame:
 def _get_release_ids_from_s3(year: int) -> list[str]:
     """Get release group IDs for a given year from S3."""
     try:
-        s3_path = f'raw/release_id_lookup/release_year={year}/**/*.parquet'
-        df = get_df_from_s3_parquet(s3_path)
+        partition = find_latest_partition(f'raw/release_id_lookup/release_year={year}')
+        if not partition:
+            logging.warning(f'No release_id_lookup partitions for {year}')
+            return []
+        df = get_df_from_s3_parquet(f'{partition}/*.parquet')
         urls = df['release_group_url'].drop_duplicates().tolist()
         return [_extract_release_group_id(url) for url in urls]
     except Exception as e:
@@ -209,32 +200,14 @@ def process_year(year: int) -> tuple[int, list[str]]:
             logging.error(f'Failed to process {release_group_id}: {e}')
             failed_release_groups.append(release_group_id)
 
-        time.sleep(0.5)
+        time.sleep(DEFAULT_REQUEST_DELAY)
 
     logging.info(f'Loaded {total_rows} rows for {year}.')
     return total_rows, failed_release_groups
 
 
 def main() -> None:
-    logging.info('Extracting worldwide snapshot data.')
-    current_year = datetime.date.today().year
-
-    total_rows = 0
-    all_failed_release_groups = []
-
-    for year in [current_year, current_year - 1]:
-        rows, failed = process_year(year)
-        total_rows += rows
-        all_failed_release_groups.extend(failed)
-
-    logging.info(f'Total rows loaded across all years: {total_rows}')
-
-    if all_failed_release_groups:
-        logging.error(f'{len(all_failed_release_groups)} release groups failed.')
-        raise RuntimeError(
-            f'worldwide_snapshot extract failed for {len(all_failed_release_groups)} '
-            f'release group IDs: {all_failed_release_groups[:10]}'
-        )
+    run_extract('worldwide_snapshot', process_year)
 
 
 if __name__ == '__main__':

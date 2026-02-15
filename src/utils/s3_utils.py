@@ -58,6 +58,43 @@ def get_df_from_s3_parquet(
     return df
 
 
+def find_latest_partition(
+    prefix: str,
+    bucket_name: str | None = None,
+) -> str | None:
+    '''
+    Find the latest scraped_date partition under an S3 prefix.
+
+    Args:
+        prefix: S3 prefix (e.g., 'raw/release_id_lookup/release_year=2026')
+        bucket_name: S3 bucket name (defaults to S3_BUCKET environment variable)
+
+    Returns:
+        Relative S3 path to the latest partition, or None if no partitions exist.
+    '''
+    if not bucket_name:
+        bucket_name = os.getenv('S3_BUCKET')
+
+    fs = s3fs.S3FileSystem(
+        key=os.getenv('S3_ACCESS_KEY_ID'),
+        secret=os.getenv('S3_SECRET_ACCESS_KEY'),
+        endpoint_url=f'https://{os.getenv("S3_ENDPOINT")}',
+        client_kwargs={'region_name': os.getenv('S3_REGION')},
+    )
+
+    try:
+        entries = fs.ls(f'{bucket_name}/{prefix}', detail=False)
+    except FileNotFoundError:
+        return None
+
+    if not entries:
+        return None
+
+    # scraped_date=YYYY-MM-DD sorts lexicographically
+    latest = sorted(entries)[-1]
+    return latest.removeprefix(f'{bucket_name}/')
+
+
 def load_df_to_s3_parquet(
     df: DataFrame,
     s3_key: str,
