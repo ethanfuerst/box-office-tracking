@@ -1,5 +1,5 @@
 MODEL (
-  name cleaned.worldwide_snapshot,
+  name cleaned.release_worldwide_snapshot,
   kind FULL
 );
 
@@ -13,4 +13,4 @@ select
     , try_cast(total_gross as int) as total_gross
     , release_group_url
     , scraped_date
-from raw.worldwide_snapshot
+from raw.release_worldwide_snapshot
