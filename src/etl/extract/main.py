@@ -31,12 +31,15 @@ ALL_EXTRACTS = DAILY_EXTRACTS + list(WEEKLY_SCHEDULE.values())
 
 def main(
     extract_names: list[str] | None = None,
+    years: list[int] | None = None,
 ) -> list[tuple[str, Exception]]:
     """Run extraction pipeline.
 
     Args:
         extract_names: Specific extracts to run. Use ['all'] to run everything.
             If None, runs based on schedule (daily + one weekly per day).
+        years: Explicit list of years to process. If None, each module
+            uses its default (current year and previous year).
 
     Returns:
         List of (extract_name, exception) tuples for any failures.
@@ -62,7 +65,7 @@ def main(
     errors = []
     for name in extracts_to_run:
         try:
-            EXTRACT_MODULES[name].main()
+            EXTRACT_MODULES[name].main(years=years)
         except Exception as e:
             logging.error(f'{name} failed: {e}')
             errors.append((name, e))
