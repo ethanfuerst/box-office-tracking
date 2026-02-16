@@ -206,8 +206,8 @@ def process_year(year: int) -> tuple[int, list[str]]:
     return total_rows, failed_release_groups
 
 
-def main() -> None:
-    run_extract('release_worldwide_snapshot', process_year)
+def main(years: list[int] | None = None) -> None:
+    run_extract('release_worldwide_snapshot', process_year, years=years)
 
 
 if __name__ == '__main__':

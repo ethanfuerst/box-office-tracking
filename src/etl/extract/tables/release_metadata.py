@@ -211,8 +211,8 @@ def process_year(year: int) -> tuple[int, list[str]]:
     return total_rows, failed_releases
 
 
-def main() -> None:
-    run_extract('release_metadata', process_year)
+def main(years: list[int] | None = None) -> None:
+    run_extract('release_metadata', process_year, years=years)
 
 
 if __name__ == '__main__':

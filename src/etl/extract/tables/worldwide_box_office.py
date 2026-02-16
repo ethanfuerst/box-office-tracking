@@ -60,8 +60,8 @@ def process_year(year: int) -> tuple[int, list[str]]:
         return 0, [str(year)]
 
 
-def main() -> None:
-    run_extract('worldwide_box_office', process_year)
+def main(years: list[int] | None = None) -> None:
+    run_extract('worldwide_box_office', process_year, years=years)
 
 
 if __name__ == '__main__':

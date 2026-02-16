@@ -95,6 +95,48 @@ def find_latest_partition(
     return latest.removeprefix(f'{bucket_name}/')
 
 
+def list_year_partitions(
+    extract_name: str,
+    bucket_name: str | None = None,
+) -> set[int]:
+    '''
+    List all release years that have data for a given extract in S3.
+
+    Args:
+        extract_name: Name of the extract (e.g., 'worldwide_box_office',
+            'release_id_lookup')
+        bucket_name: S3 bucket name (defaults to S3_BUCKET env var)
+
+    Returns:
+        Set of years (ints) that have at least one partition.
+    '''
+    if not bucket_name:
+        bucket_name = os.getenv('S3_BUCKET')
+
+    fs = s3fs.S3FileSystem(
+        key=os.getenv('S3_ACCESS_KEY_ID'),
+        secret=os.getenv('S3_SECRET_ACCESS_KEY'),
+        endpoint_url=f'https://{os.getenv("S3_ENDPOINT")}',
+        client_kwargs={'region_name': os.getenv('S3_REGION')},
+    )
+
+    prefix = f'{bucket_name}/raw/{extract_name}'
+    try:
+        entries = fs.ls(prefix, detail=False)
+    except FileNotFoundError:
+        return set()
+
+    years = set()
+    for entry in entries:
+        part = entry.split('/')[-1]
+        if part.startswith('release_year='):
+            try:
+                years.add(int(part.split('=')[1]))
+            except ValueError:
+                continue
+    return years
+
+
 def load_df_to_s3_parquet(
     df: DataFrame,
     s3_key: str,

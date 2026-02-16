@@ -1,4 +1,5 @@
 import argparse
+import datetime
 
 import modal
 from dotenv import load_dotenv
@@ -34,8 +35,14 @@ modal_image = (
         initial_delay=60.0,
     ),
 )
-def run_pipeline(extract_names: list[str] | None = None):
-    extract_errors = extract(extract_names=extract_names)
+def run_pipeline(
+    extract_names: list[str] | None = None,
+    years: list[int] | None = None,
+):
+    if years is None:
+        current_year = datetime.date.today().year
+        years = [current_year, current_year - 1]
+    extract_errors = extract(extract_names=extract_names, years=years)
     transform()
     load()
 
@@ -56,6 +63,25 @@ if __name__ == '__main__':
             'Use --extracts all to force all extracts regardless of schedule.'
         ),
     )
+    parser.add_argument(
+        '--start-year',
+        type=int,
+        default=None,
+        help='First year to extract (inclusive). Defaults to current_year - 1.',
+    )
+    parser.add_argument(
+        '--end-year',
+        type=int,
+        default=None,
+        help='Last year to extract (inclusive). Defaults to current_year.',
+    )
     args = parser.parse_args()
 
-    run_pipeline.local(extract_names=args.extracts)
+    current_year = datetime.date.today().year
+    start = args.start_year if args.start_year is not None else current_year - 1
+    end = args.end_year if args.end_year is not None else current_year
+    if start > end:
+        parser.error(f'--start-year ({start}) must be <= --end-year ({end}).')
+    years = list(range(start, end + 1))
+
+    run_pipeline.local(extract_names=args.extracts, years=years)

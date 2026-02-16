@@ -6,24 +6,29 @@ from collections.abc import Callable
 def run_extract(
     name: str,
     process_year: Callable[[int], tuple[int, list[str]]],
+    years: list[int] | None = None,
 ) -> None:
     """Shared runner for extract modules.
 
-    Iterates over current and previous year, collects failures,
-    and raises if any occurred.
+    Iterates over the given years (or current and previous year by default),
+    collects failures, and raises if any occurred.
 
     Args:
         name: Extract name (used in log/error messages).
         process_year: Function that takes a year and returns
             (rows_loaded, list_of_failed_ids).
+        years: Explicit list of years to process. If None, defaults to
+            [current_year, current_year - 1].
     """
     logging.info(f'Extracting {name} data.')
-    current_year = datetime.date.today().year
+    if years is None:
+        current_year = datetime.date.today().year
+        years = [current_year, current_year - 1]
 
     total_rows = 0
     all_failed = []
 
-    for year in [current_year, current_year - 1]:
+    for year in years:
         rows, failed = process_year(year)
         total_rows += rows
         all_failed.extend(failed)
