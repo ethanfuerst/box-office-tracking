@@ -163,7 +163,7 @@ def load(df: pd.DataFrame, release_group_id: str) -> int:
 
     formatted_date = datetime.date.today().strftime(S3_DATE_FORMAT)
     s3_key = (
-        f'raw/worldwide_snapshot/release_group_id={release_group_id}/'
+        f'raw/release_worldwide_snapshot/release_group_id={release_group_id}/'
         f'scraped_date={formatted_date}/data'
     )
     return load_df_to_s3_parquet(df=df, s3_key=s3_key)
@@ -176,7 +176,7 @@ def process_year(year: int) -> tuple[int, list[str]]:
     Returns:
         tuple: (total_rows_loaded, list_of_failed_ids)
     """
-    logging.info(f'Processing worldwide snapshot data for {year}.')
+    logging.info(f'Processing release worldwide snapshot data for {year}.')
     release_group_ids = _get_release_ids_from_s3(year)
 
     if not release_group_ids:
@@ -207,7 +207,7 @@ def process_year(year: int) -> tuple[int, list[str]]:
 
 
 def main() -> None:
-    run_extract('worldwide_snapshot', process_year)
+    run_extract('release_worldwide_snapshot', process_year)
 
 
 if __name__ == '__main__':

@@ -5,8 +5,8 @@ from src.etl.extract.tables import (
     release_domestic,
     release_id_lookup,
     release_metadata,
+    release_worldwide_snapshot,
     worldwide_box_office,
-    worldwide_snapshot,
 )
 from src.utils.logging_config import setup_logging
 
@@ -17,14 +17,14 @@ EXTRACT_MODULES = {
     'release_id_lookup': release_id_lookup,
     'release_metadata': release_metadata,
     'release_domestic': release_domestic,
-    'worldwide_snapshot': worldwide_snapshot,
+    'release_worldwide_snapshot': release_worldwide_snapshot,
 }
 
 DAILY_EXTRACTS = ['worldwide_box_office', 'release_id_lookup']
 WEEKLY_SCHEDULE = {
     1: 'release_domestic',  # Tuesday
     2: 'release_metadata',  # Wednesday
-    3: 'worldwide_snapshot',  # Thursday
+    3: 'release_worldwide_snapshot',  # Thursday
 }
 ALL_EXTRACTS = DAILY_EXTRACTS + list(WEEKLY_SCHEDULE.values())
 
