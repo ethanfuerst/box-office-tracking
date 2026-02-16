@@ -5,10 +5,10 @@ import time
 from urllib.parse import urljoin, urlsplit, urlunsplit
 
 import pandas as pd
-import requests
-from bs4 import BeautifulSoup
 
+from src.etl.extract.runner import run_extract
 from src.utils.s3_utils import load_df_to_s3_parquet
+from src.utils.scraping import DEFAULT_REQUEST_DELAY, create_scrape_session, get_soup
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -16,18 +16,8 @@ S3_DATE_FORMAT = '%Y-%m-%d'
 EXPECTED_COLUMNS = {'movie_title', 'release_group_url', 'domestic_release_url'}
 
 BOX_OFFICE_MOJO_BASE = 'https://www.boxofficemojo.com'
-BOX_OFFICE_MOJO_UA = (
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) '
-    'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-)
 
-_scrape_session = requests.Session()
-_scrape_session.headers.update(
-    {
-        'User-Agent': BOX_OFFICE_MOJO_UA,
-        'Accept-Language': 'en-US,en;q=0.9',
-    }
-)
+_scrape_session = create_scrape_session()
 
 
 def canonicalize(url: str) -> str:
@@ -38,16 +28,10 @@ def canonicalize(url: str) -> str:
     return urlunsplit((p.scheme, p.netloc, p.path, '', ''))
 
 
-def _get_soup(url: str) -> BeautifulSoup:
-    r = _scrape_session.get(url, timeout=30)
-    r.raise_for_status()
-    return BeautifulSoup(r.text, 'lxml')
-
-
 def _year_world_releasegroup_records(
     year_world_url: str,
 ) -> list[dict[str, str | None]]:
-    soup = _get_soup(year_world_url)
+    soup = get_soup(_scrape_session, year_world_url)
     seen = set()
     records = []
     for a in soup.select('a[href^="/releasegroup/"]'):
@@ -68,7 +52,7 @@ def _year_world_releasegroup_records(
 
 
 def _releasegroup_to_domestic_release_url(releasegroup_url: str) -> str | None:
-    soup = _get_soup(releasegroup_url)
+    soup = get_soup(_scrape_session, releasegroup_url)
 
     for a in soup.select('a[href^="/release/"]'):
         if a.get_text(strip=True) == 'Domestic':
@@ -111,7 +95,7 @@ def extract(year: int) -> pd.DataFrame:
             if count % 5 == 0:
                 logging.info(f'Parsed {count}/{num_rows} rows')
 
-            time.sleep(0.25)
+            time.sleep(DEFAULT_REQUEST_DELAY)
 
         return pd.DataFrame(records)
     except Exception as e:
@@ -137,26 +121,21 @@ def load(df: pd.DataFrame, year: int) -> int:
     return load_df_to_s3_parquet(df=df, s3_key=s3_key)
 
 
+def process_year(year: int) -> tuple[int, list[str]]:
+    """Extract and load release ID lookup data for a given year."""
+    try:
+        df = extract(year)
+        rows = load(df, year)
+        if rows == 0:
+            return 0, [str(year)]
+        return rows, []
+    except Exception as e:
+        logging.error(f'Failed for {year}: {e}')
+        return 0, [str(year)]
+
+
 def main() -> None:
-    logging.info('Extracting release ID lookup data.')
-    current_year = datetime.date.today().year
-    total_rows = 0
-    failed_years = []
-    for year in [current_year, current_year - 1]:
-        try:
-            df = extract(year)
-            rows = load(df, year)
-            if rows == 0:
-                failed_years.append(year)
-            total_rows += rows
-        except Exception as e:
-            logging.error(f'Failed for {year}: {e}')
-            failed_years.append(year)
-    logging.info(f'Total rows loaded: {total_rows}')
-    if failed_years:
-        raise RuntimeError(
-            f'release_id_lookup extract failed for years: {failed_years}'
-        )
+    run_extract('release_id_lookup', process_year)
 
 
 if __name__ == '__main__':

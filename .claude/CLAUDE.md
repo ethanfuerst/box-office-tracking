@@ -12,7 +12,8 @@ Scrapes worldwide box office data from Box Office Mojo daily, processes it with 
 - [src/sqlmesh_project/](src/sqlmesh_project/) - SQLMesh models, macros, config
   - [models/](src/sqlmesh_project/models/) - layered SQL models (`_1_raw`, `_2_cleaned`, `_3_combined`, `_4_published`)
   - [config.py](src/sqlmesh_project/config.py) - DuckDB connection and S3 secrets
-- [src/utils/](src/utils/) - shared utilities (logging, S3 helpers)
+- [src/etl/extract/runner.py](src/etl/extract/runner.py) - shared extract runner (year loop + error collection)
+- [src/utils/](src/utils/) - shared utilities (logging, S3 helpers, scraping)
 - [SCHEMA.md](SCHEMA.md) - published table schemas and version history
 - [create_release.sh](create_release.sh) - interactive script to bump version, tag, and create GitHub releases
 
@@ -39,11 +40,12 @@ S3_REGION="..."
 # Run the full pipeline locally (extract → transform → load)
 uv run python app.py
 
-# Skip extraction (useful if raw data already exists)
-uv run python app.py --skip-extracts
-
 # Force all extracts regardless of schedule logic
-uv run python app.py --force-all-extracts
+uv run python app.py --extracts all
+
+# Run specific extract(s)
+uv run python app.py --extracts release_domestic
+uv run python app.py --extracts release_domestic worldwide_box_office
 
 # Deploy to Modal (scheduled daily at 07:00 UTC)
 uv run modal deploy app.py
@@ -72,7 +74,7 @@ pre-commit run --all-files
 
 ## Where to start for common tasks
 
-- **Add a new scraper** - create a new module in `src/etl/extract/tables/`, import in `src/etl/extract/main.py`
+- **Add a new scraper** - create a new module in `src/etl/extract/tables/` with a `process_year(year)` function and `main()` that calls `run_extract()`, then register in `src/etl/extract/main.py`
 - **Update SQL transformations** - edit models in `src/sqlmesh_project/models/`; models are layered as `_1_raw`, `_2_cleaned`, `_3_combined`, `_4_published`
 - **Change published schema** - update models in `_4_published/`, update [SCHEMA.md](SCHEMA.md), bump major version if breaking
 - **Modify S3 paths or logic** - edit [src/utils/s3_utils.py](src/utils/s3_utils.py) and `src/etl/load/`
